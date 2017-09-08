@@ -48,9 +48,9 @@ class ChatBotModel(object):
             b = tf.get_variable('proj_b', [config.DEC_VOCAB])
             self.output_projection = (w, b)
 
-        def sampled_loss(inputs, labels):
+        def sampled_loss(labels, logits):
             labels = tf.reshape(labels, [-1, 1])
-            return tf.nn.sampled_softmax_loss(tf.transpose(w), b, inputs, labels,
+            return tf.nn.sampled_softmax_loss(tf.transpose(w), b, labels, logits,
                                               config.NUM_SAMPLES, config.DEC_VOCAB)
         self.softmax_loss_function = sampled_loss
 
