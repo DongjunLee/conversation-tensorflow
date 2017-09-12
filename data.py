@@ -154,6 +154,10 @@ def token2id(data, mode):
     in_file = open(os.path.join(Config.data.PROCESSED_PATH, in_path), 'r')
     out_file = open(os.path.join(Config.data.PROCESSED_PATH, out_path), 'wb')
 
+    max_sentence_length = Config.data.MAX_SENTENCE_LENGTH
+    if mode == "enc":
+        max_sentence_length -= 2 # mode: enc | have start, end token
+
     lines = in_file.read().splitlines()
     for line in lines:
         if mode == 'enc':  # we only care about '<s>' and </s> in encoder
@@ -162,7 +166,7 @@ def token2id(data, mode):
             ids = []
 
         sentence_ids = sentence2id(vocab, line)
-        if len(sentence_ids) > Config.data.MAX_SENTENCE_LENGTH:
+        if len(sentence_ids) - 1 > max_sentence_length:
             continue
 
         ids.extend(sentence_ids)

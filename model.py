@@ -27,13 +27,13 @@ class Seq2Seq:
         self.X = features['input']
         self.y = features['output']
 
-        self.start_tokens = tf.ones([Config.model.BATCH_SIZE, 1], dtype=tf.int64) * Config.data.START_ID
-        self.end_tokens = tf.ones([Config.model.BATCH_SIZE, 1], dtype=tf.int64) * Config.data.EOS_ID
+        # self.start_tokens = tf.ones([Config.model.BATCH_SIZE, 1], dtype=tf.int64) * Config.data.START_ID
+        # self.end_tokens = tf.ones([Config.model.BATCH_SIZE, 1], dtype=tf.int64) * Config.data.EOS_ID
 
-        self.train_output = tf.concat([self.start_tokens, self.y, self.end_tokens], axis=1)
+        # self.train_output = tf.concat([self.start_tokens, self.y, self.end_tokens], axis=1)
 
         self.input_lengths = tf.reduce_sum(tf.to_int32(tf.not_equal(self.X, 1)), 1)
-        self.output_lengths = tf.reduce_sum(tf.to_int32(tf.not_equal(self.train_output, 1)), 1)
+        self.output_lengths = tf.reduce_sum(tf.to_int32(tf.not_equal(self.y, 1)), 1)
 
     def build_graph(self):
         self._create_embed()
@@ -51,7 +51,7 @@ class Seq2Seq:
             embed_dim=Config.model.EMBED_DIM,
             scope='embed')
         self.output_embed = layers.embed_sequence(
-            self.train_output,
+            self.y,
             vocab_size=Config.model.VOCAB_SIZE,
             embed_dim=Config.model.EMBED_DIM,
             scope='embed', reuse=True)
@@ -128,7 +128,7 @@ class Seq2Seq:
 
         self.loss = tf.contrib.seq2seq.sequence_loss(
                 logits=self.decoder_train_logits,
-                targets=self.train_output,
+                targets=self.y,
                 weights=masks)
 
     def _create_optimizer(self):

@@ -57,10 +57,19 @@ def make_input_fn(
                 with open(output_path) as foutput:
                     for in_line in finput:
                         out_line = foutput.readline()
-                        yield {
-                            'input': in_line.split(' '),
-                            'output': out_line.split(' ')
-                        }
+
+                        if in_line.startswith("\n") or out_line.startswith("\n"):
+                            pass
+                        else:
+                            in_lines = in_line.split(' ')
+                            out_lines = out_line.split(' ')
+                            if len(in_lines) < Config.data.MAX_SENTENCE_LENGTH and \
+                                len(out_lines) + 2 < Config.data.MAX_SENTENCE_LENGTH:
+
+                                yield {
+                                    'input': in_lines,
+                                    'output': out_lines
+                                }
 
     sample_me = sampler()
 
@@ -74,7 +83,7 @@ def make_input_fn(
             outputs.append(rec['output'])
 
             inputs[i] += [Config.data.PAD_ID] * (max_sentence_length - len(inputs[i]))
-            outputs[i] += [Config.data.PAD_ID] * (max_sentence_length - 2 - len(outputs[i]))
+            outputs[i] = [Config.data.START_ID] + outputs[i] + [Config.data.EOS_ID] + ([Config.data.PAD_ID] * (max_sentence_length - 2 - len(outputs[i])))
         return {
             'input:0': inputs,
             'output:0': outputs
@@ -108,5 +117,5 @@ def get_formatter(keys, vocab):
         res = []
         for key in keys:
             res.append("%s = %s" % (key, to_str(values[key])))
-        return '\n'.join(res)
+        return '\n - ' + '\n - '.join(res)
     return format

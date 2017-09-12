@@ -31,8 +31,8 @@ def train():
         formatter=utils.get_formatter(['input_0', 'output_0'], vocab))
 
     print_predictions = tf.train.LoggingTensorHook(
-        ['predictions', 'decoder/train_pred'], every_n_iter=100,
-        formatter=utils.get_formatter(['predictions', 'decoder/train_pred'], vocab))
+        ['predictions'], every_n_iter=100,
+        formatter=utils.get_formatter(['predictions'], vocab))
 
     est.train(
         input_fn=input_fn,
