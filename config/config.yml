@@ -1,0 +1,24 @@
+data:
+  DATA_PATH: '/Users/Dongjun/Projects/conversation-tensorflow/data/cornell_movie-dialogs_corpus'
+  CONVERSATION_FILE: 'movie_conversations.txt'
+  LINE_FILE: 'movie_lines.txt'
+  PROCESSED_PATH: 'processed_data'
+  WORD_THRESHOLD: 2
+  PAD_ID: 0
+  UNK_ID: 1
+  START_ID: 2
+  EOS_ID: 3
+  TESTSET_SIZE: 25000
+model:
+  CPT_PATH: 'checkpoints'
+  NUM_LAYERS: 3
+  NUM_UNITS: 256
+  EMBED_DIM: 300
+  BATCH_SIZE: 64
+  INPUT_MAX_LENGTH: 100
+  OUTPUT_MAX_LENGTH: 100
+  LEARNING_RATE: 0.5
+  MAX_GRAD_NORM: 5.0
+  NUM_SAMPLES: 512
+  ENC_VOCAB: 24460
+  DEC_VOCAB: 24663
