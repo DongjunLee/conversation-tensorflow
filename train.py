@@ -22,7 +22,7 @@ def train():
 
     input_fn, feed_fn = utils.make_input_fn(
         Config.model.BATCH_SIZE,
-        "input", "output",
+        "train_ids.enc", "train_ids.dec",
         vocab, Config.model.MAX_SENTENCE_LENGTH)
 
     # Make hooks to print examples of inputs/predictions.
