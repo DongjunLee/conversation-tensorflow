@@ -101,7 +101,7 @@ class Seq2Seq:
                     decoder=decoder,
                     output_time_major=False,
                     impute_finished=True,
-                    maximum_iterations=Config.model.MAX_SENTENCE_LENGTH
+                    maximum_iterations=Config.data.MAX_SENTENCE_LENGTH
                 )
                 return outputs[0]
 
@@ -123,7 +123,7 @@ class Seq2Seq:
         #max_output_length = tf.reduce_max(self.output_lengths)
         masks = tf.sequence_mask(
                 lengths=self.output_lengths,
-                maxlen=Config.model.MAX_SENTENCE_LENGTH,
+                maxlen=Config.data.MAX_SENTENCE_LENGTH,
                 dtype=tf.float32, name='masks')
 
         self.loss = tf.contrib.seq2seq.sequence_loss(

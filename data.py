@@ -156,13 +156,17 @@ def token2id(data, mode):
 
     lines = in_file.read().splitlines()
     for line in lines:
-        if mode == 'dec':  # we only care about '<s>' and </s> in encoder
+        if mode == 'enc':  # we only care about '<s>' and </s> in encoder
             ids = [vocab['<s>']]
         else:
             ids = []
-        ids.extend(sentence2id(vocab, line))
-        # ids.extend([vocab.get(token, vocab['<unk>']) for token in basic_tokenizer(line)])
-        if mode == 'dec':
+
+        sentence_ids = sentence2id(vocab, line)
+        if len(sentence_ids) > Config.data.MAX_SENTENCE_LENGTH:
+            continue
+
+        ids.extend(sentence_ids)
+        if mode == 'enc':
             ids.append(vocab['<\s>'])
         out_file.write(b' '.join(str(id_).encode('cp1252') for id_ in ids) + b'\n')
 
@@ -177,7 +181,9 @@ def prepare_raw_data():
 
 def process_data():
     print('Preparing data to be model-ready ...')
+
     build_vocab('train.enc', 'train.dec')
+
     token2id('train', 'enc')
     token2id('train', 'dec')
     token2id('test', 'enc')

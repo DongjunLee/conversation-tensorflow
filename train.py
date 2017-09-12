@@ -23,15 +23,15 @@ def train():
     input_fn, feed_fn = utils.make_input_fn(
         Config.model.BATCH_SIZE,
         "train_ids.enc", "train_ids.dec",
-        vocab, Config.model.MAX_SENTENCE_LENGTH)
+        vocab, Config.data.MAX_SENTENCE_LENGTH)
 
     # Make hooks to print examples of inputs/predictions.
     print_inputs = tf.train.LoggingTensorHook(
-        ['input_0', 'output_0'], every_n_iter=1,
+        ['input_0', 'output_0'], every_n_iter=100,
         formatter=utils.get_formatter(['input_0', 'output_0'], vocab))
 
     print_predictions = tf.train.LoggingTensorHook(
-        ['predictions', 'decoder/train_pred'], every_n_iter=1,
+        ['predictions', 'decoder/train_pred'], every_n_iter=100,
         formatter=utils.get_formatter(['predictions', 'decoder/train_pred'], vocab))
 
     est.train(
@@ -48,6 +48,7 @@ def main():
     # create checkpoints folder if there isn't one already
     data.make_dir(Config.model.CPT_PATH)
 
+    print("Config: ", Config)
     train()
 
 if __name__ == '__main__':
