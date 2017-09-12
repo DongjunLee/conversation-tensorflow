@@ -110,7 +110,7 @@ def get_formatter(keys, vocab):
 
     def to_str(sequence):
         tokens = [
-            rev_vocab.get(x, "<unk>") for x in sequence]
+            rev_vocab.get(x, "<unk>") for x in sequence if x != Config.data.PAD_ID]
         return ' '.join(tokens)
 
     def format(values):
