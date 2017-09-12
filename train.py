@@ -22,8 +22,8 @@ def train():
 
     input_fn, feed_fn = utils.make_input_fn(
         Config.model.BATCH_SIZE,
-        "train.enc", "train.dec",
-        vocab, Config.model.INPUT_MAX_LENGTH, Config.model.OUTPUT_MAX_LENGTH)
+        "input", "output",
+        vocab, Config.model.MAX_SENTENCE_LENGTH)
 
     # Make hooks to print examples of inputs/predictions.
     print_inputs = tf.train.LoggingTensorHook(
@@ -31,8 +31,8 @@ def train():
         formatter=utils.get_formatter(['input_0', 'output_0'], vocab))
 
     print_predictions = tf.train.LoggingTensorHook(
-        ['predictions', 'train_pred'], every_n_iter=1,
-        formatter=utils.get_formatter(['predictions', 'train_pred'], vocab))
+        ['predictions', 'decoder/train_pred'], every_n_iter=1,
+        formatter=utils.get_formatter(['predictions', 'decoder/train_pred'], vocab))
 
     est.train(
         input_fn=input_fn,

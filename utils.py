@@ -35,12 +35,12 @@ def tokenize_and_map(line, vocab):
 
 def make_input_fn(
         batch_size, input_filename, output_filename, vocab,
-        input_max_length, output_max_length,
+        max_sentence_length,
         input_process=tokenize_and_map, output_process=tokenize_and_map):
 
     def input_fn():
-        inp = tf.placeholder(tf.int64, shape=[None, None], name='input')
-        output = tf.placeholder(tf.int64, shape=[None, None], name='output')
+        inp = tf.placeholder(tf.int64, shape=(None, None), name='input')
+        output = tf.placeholder(tf.int64, shape=(None, None), name='output')
         tf.identity(inp[0], 'input_0')
         tf.identity(output[0], 'output_0')
         return {
@@ -58,25 +58,23 @@ def make_input_fn(
                     for in_line in finput:
                         out_line = foutput.readline()
                         yield {
-                            'input': input_process(in_line, vocab)[:input_max_length - 1] + [Config.data.EOS_ID],
-                            'output': output_process(out_line, vocab)[:output_max_length - 1] + [Config.data.EOS_ID]
+                            'input': in_line.split(' '),
+                            'output': out_line.split(' ')
                         }
 
     sample_me = sampler()
 
     def feed_fn():
         inputs, outputs = [], []
-        input_length, output_length = 0, 0
+
+        # Pad me right with pad_id
         for i in range(batch_size):
             rec = next(sample_me)
             inputs.append(rec['input'])
             outputs.append(rec['output'])
-            input_length = max(input_length, len(inputs[-1]))
-            output_length = max(output_length, len(outputs[-1]))
-        # Pad me right with pad_id
-        for i in range(batch_size):
-            inputs[i] += [Config.data.PAD_ID] * (input_length - len(inputs[i]))
-            outputs[i] += [Config.data.PAD_ID] * (output_length - len(outputs[i]))
+
+            inputs[i] += [Config.data.PAD_ID] * (max_sentence_length - len(inputs[i]))
+            outputs[i] += [Config.data.PAD_ID] * (max_sentence_length - 2 - len(outputs[i]))
         return {
             'input:0': inputs,
             'output:0': outputs

@@ -18,7 +18,7 @@ class Seq2Seq:
 
         return tf.estimator.EstimatorSpec(
             mode=mode,
-            predictions=self.pred_outputs.sample_id,
+            predictions=self.decoder_pred_outputs.sample_id,
             loss=self.loss,
             train_op=self.train_op
         )
@@ -26,6 +26,14 @@ class Seq2Seq:
     def _create_placeholder(self, features):
         self.X = features['input']
         self.y = features['output']
+
+        self.start_tokens = tf.ones([Config.model.BATCH_SIZE, 1], dtype=tf.int64) * Config.data.START_ID
+        self.end_tokens = tf.ones([Config.model.BATCH_SIZE, 1], dtype=tf.int64) * Config.data.EOS_ID
+
+        self.train_output = tf.concat([self.start_tokens, self.y, self.end_tokens], axis=1)
+
+        self.input_lengths = tf.reduce_sum(tf.to_int32(tf.not_equal(self.X, 1)), 1)
+        self.output_lengths = tf.reduce_sum(tf.to_int32(tf.not_equal(self.train_output, 1)), 1)
 
     def build_graph(self):
         self._create_embed()
@@ -37,12 +45,6 @@ class Seq2Seq:
         self._create_predictions()
 
     def _create_embed(self):
-        self.start_tokens = tf.zeros([Config.model.BATCH_SIZE], dtype=tf.int64)
-        self.train_output = tf.concat([tf.expand_dims(self.start_tokens, 1), self.y], 1)
-
-        self.input_lengths = tf.reduce_sum(tf.to_int32(tf.not_equal(self.X, 1)), 1)
-        self.output_lengths = tf.reduce_sum(tf.to_int32(tf.not_equal(self.train_output, 1)), 1)
-
         self.input_embed = layers.embed_sequence(
             self.X,
             vocab_size=Config.model.VOCAB_SIZE,
@@ -58,16 +60,20 @@ class Seq2Seq:
         with tf.variable_scope('embed', reuse=True):
             embeddings = tf.get_variable('embeddings')
 
+        start_tokens = tf.ones([Config.model.BATCH_SIZE], tf.int32) * Config.data.START_ID
+
         self.train_helper = tf.contrib.seq2seq.TrainingHelper(
-            self.output_embed, self.output_lengths)
+                inputs=self.output_embed,
+                sequence_length=self.output_lengths)
         self.pred_helper = tf.contrib.seq2seq.GreedyEmbeddingHelper(
-            embeddings,
-            start_tokens=tf.to_int32(self.start_tokens),
-            end_token=1)
+                embedding=embeddings,
+                start_tokens=start_tokens,
+                end_token=Config.data.EOS_ID)
 
     def _create_encoder(self):
-        cells = self._create_rnn_cells()
-        self.encoder_outputs, encoder_final_state = tf.nn.dynamic_rnn(cells, self.input_embed, dtype=tf.float32)
+        with tf.variable_scope('encoder'):
+            cells = self._create_rnn_cells()
+            self.encoder_outputs, encoder_final_state = tf.nn.dynamic_rnn(cells, self.input_embed, dtype=tf.float32)
 
     def _create_decoder(self):
 
@@ -92,15 +98,19 @@ class Seq2Seq:
                         dtype=tf.float32, batch_size=Config.model.BATCH_SIZE))
 
                 outputs = tf.contrib.seq2seq.dynamic_decode(
-                    decoder=decoder, output_time_major=False,
-                    impute_finished=True, maximum_iterations=Config.model.OUTPUT_MAX_LENGTH
+                    decoder=decoder,
+                    output_time_major=False,
+                    impute_finished=True,
+                    maximum_iterations=Config.model.MAX_SENTENCE_LENGTH
                 )
                 return outputs[0]
 
-        self.train_outputs = decode(self.train_helper, 'decode')
-        self.pred_outputs = decode(self.pred_helper, 'decode', reuse=True)
+        with tf.variable_scope('decoder'):
+            self.decoder_train_outputs = decode(self.train_helper, 'decode')
+            self.decoder_pred_outputs = decode(self.pred_helper, 'decode', reuse=True)
 
-        tf.identity(self.train_outputs.sample_id[0], name='train_pred')
+            tf.identity(self.decoder_train_outputs.sample_id[0], name='train_pred')
+            self.decoder_train_logits = tf.identity(self.decoder_train_outputs.rnn_output)
 
     def _create_rnn_cells(self):
         stacked_rnn = []
@@ -110,9 +120,16 @@ class Seq2Seq:
         return tf.nn.rnn_cell.MultiRNNCell(cells=stacked_rnn, state_is_tuple=True)
 
     def _create_loss(self):
-        weights = tf.to_float(tf.not_equal(self.train_output[:, :-1], 1))
+        #max_output_length = tf.reduce_max(self.output_lengths)
+        masks = tf.sequence_mask(
+                lengths=self.output_lengths,
+                maxlen=Config.model.MAX_SENTENCE_LENGTH,
+                dtype=tf.float32, name='masks')
+
         self.loss = tf.contrib.seq2seq.sequence_loss(
-            self.train_outputs.rnn_output, self.y, weights=weights)
+                logits=self.decoder_train_logits,
+                targets=self.train_output,
+                weights=masks)
 
     def _create_optimizer(self):
         self.train_op = layers.optimize_loss(
@@ -122,4 +139,4 @@ class Seq2Seq:
             summaries=['loss', 'learning_rate'])
 
     def _create_predictions(self):
-        tf.identity(self.pred_outputs.sample_id[0], name='predictions')
+        tf.identity(self.decoder_pred_outputs.sample_id[0], name='predictions')
