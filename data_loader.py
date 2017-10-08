@@ -10,7 +10,7 @@ from hbconfig import Config
 
 def get_lines():
     id2line = {}
-    file_path = os.path.join(Config.data.DATA_PATH, Config.data.LINE_FILE)
+    file_path = os.path.join(Config.data.base_path, Config.data.line_fname)
     with open(file_path, 'rb') as f:
         lines = f.readlines()
         for line in lines:
@@ -24,7 +24,7 @@ def get_lines():
 
 def get_convos():
     """ Get conversations from the raw data """
-    file_path = os.path.join(Config.data.DATA_PATH, Config.data.CONVERSATION_FILE)
+    file_path = os.path.join(Config.data.base_path, Config.data.conversation_fname)
     convos = []
     with open(file_path, 'r') as f:
         for line in f.readlines():
@@ -51,15 +51,15 @@ def question_answers(id2line, convos):
 
 def prepare_dataset(questions, answers):
     # create path to store all the train & test encoder & decoder
-    make_dir(Config.data.PROCESSED_PATH)
+    make_dir(Config.data.processed_path)
 
     # random convos to create the test set
-    test_ids = random.sample([i for i in range(len(questions))], Config.data.TESTSET_SIZE)
+    test_ids = random.sample([i for i in range(len(questions))], Config.data.testset_size)
 
     filenames = ['train.enc', 'train.dec', 'test.enc', 'test.dec']
     files = []
     for filename in filenames:
-        files.append(open(os.path.join(Config.data.PROCESSED_PATH, filename), 'w'))
+        files.append(open(os.path.join(Config.data.processed_path, filename), 'w'))
 
     for i in range(len(questions)):
         if i in test_ids:
@@ -111,15 +111,15 @@ def build_vocab(in_fname, out_fname, normalize_digits=True):
                         vocab[token] = 0
                     vocab[token] += 1
 
-    in_path = os.path.join(Config.data.PROCESSED_PATH, in_fname)
-    out_path = os.path.join(Config.data.PROCESSED_PATH, out_fname)
+    in_path = os.path.join(Config.data.processed_path, in_fname)
+    out_path = os.path.join(Config.data.processed_path, out_fname)
 
     count_vocab(in_path)
     count_vocab(out_path)
 
     sorted_vocab = sorted(vocab, key=vocab.get, reverse=True)
 
-    dest_path = os.path.join(Config.data.PROCESSED_PATH, 'vocab')
+    dest_path = os.path.join(Config.data.processed_path, 'vocab')
     with open(dest_path, 'w') as f:
         f.write('<pad>' + '\n')
         f.write('<unk>' + '\n')
@@ -127,16 +127,16 @@ def build_vocab(in_fname, out_fname, normalize_digits=True):
         f.write('<\s>' + '\n')
         index = 4
         for word in sorted_vocab:
-            if vocab[word] < Config.data.WORD_THRESHOLD:
+            if vocab[word] < Config.data.word_threshold:
                 pass
             f.write(word + '\n')
             index += 1
 
 
-def load_vocab(vocab_path):
-    with open(vocab_path, 'r') as f:
+def load_vocab(vocab_fname):
+    with open(os.path.join(Config.data.processed_path, vocab_fname), 'r') as f:
         words = f.read().splitlines()
-    return words, {words[i]: i for i in range(len(words))}
+    return {words[i]: i for i in range(len(words))}
 
 
 def sentence2id(vocab, line):
@@ -150,17 +150,17 @@ def token2id(data, mode):
     in_path = data + '.' + mode
     out_path = data + '_ids.' + mode
 
-    _, vocab = load_vocab(os.path.join(Config.data.PROCESSED_PATH, vocab_path))
-    in_file = open(os.path.join(Config.data.PROCESSED_PATH, in_path), 'r')
-    out_file = open(os.path.join(Config.data.PROCESSED_PATH, out_path), 'wb')
+    vocab = load_vocab(vocab_path)
+    in_file = open(os.path.join(Config.data.processed_path, in_path), 'r')
+    out_file = open(os.path.join(Config.data.processed_path, out_path), 'wb')
 
-    max_sentence_length = Config.data.MAX_SENTENCE_LENGTH
-    if mode == "enc":
-        max_sentence_length -= 2 # mode: enc | have start, end token
+    max_sentence_length = Config.data.max_seq_length
+    if mode == "dec":
+        max_sentence_length -= 2 # mode: dec  have start, end token
 
     lines = in_file.read().splitlines()
     for line in lines:
-        if mode == 'enc':  # we only care about '<s>' and </s> in encoder
+        if mode == 'dec':  # we only care about '<s>' and </s> in decoder
             ids = [vocab['<s>']]
         else:
             ids = []
@@ -170,7 +170,7 @@ def token2id(data, mode):
             continue
 
         ids.extend(sentence_ids)
-        if mode == 'enc':
+        if mode == 'dec':
             ids.append(vocab['<\s>'])
         out_file.write(b' '.join(str(id_).encode('cp1252') for id_ in ids) + b'\n')
 
@@ -194,28 +194,29 @@ def process_data():
     token2id('test', 'dec')
 
 
-def load_data(enc_filename, dec_filename, max_training_size=None):
-    encode_file = open(os.path.join(Config.data.PROCESSED_PATH, enc_filename), 'r')
-    decode_file = open(os.path.join(Config.data.PROCESSED_PATH, dec_filename), 'r')
-    encode, decode = encode_file.readline(), decode_file.readline()
-    data_buckets = [[] for _ in Config.model.BUCKETS]
-    i = 0
-    while encode and decode:
-        if (i + 1) % 10000 == 0:
-            print("Bucketing conversation number", i)
-        encode_ids = [int(id_) for id_ in encode.split()]
-        decode_ids = [int(id_) for id_ in decode.split()]
-        for bucket_id, (encode_max_size, decode_max_size) in enumerate(Config.model.BUCKETS):
-            if len(encode_ids) <= encode_max_size and len(decode_ids) <= decode_max_size:
-                data_buckets[bucket_id].append([encode_ids, decode_ids])
-                break
-        encode, decode = encode_file.readline(), decode_file.readline()
-        i += 1
-    return data_buckets
+def make_train_and_test_set():
+    train_X = load_data('train_ids.enc')
+    train_y = load_data('train_ids.dec')
+
+    test_X = load_data('test_ids.enc')
+    test_y = load_data('test_ids.dec')
+
+    return train_X, test_X, train_y, test_y
+
+
+def load_data(fname):
+    input_data = open(os.path.join(Config.data.processed_path, fname), 'r')
+
+    data = []
+    for line in input_data.readlines():
+        ids = [int(id_) for id_ in line.split()]
+        ids = _pad_input(ids, Config.data.max_seq_length)
+        data.append(ids)
+    return np.array(data, dtype=np.int32)
 
 
 def _pad_input(input_, size):
-    return input_ + [config.PAD_ID] * (size - len(input_))
+    return input_ + [Config.data.PAD_ID] * (size - len(input_))
 
 
 def _reshape_batch(inputs, size, batch_size):

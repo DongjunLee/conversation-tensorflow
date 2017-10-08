@@ -1,0 +1,29 @@
+data:
+  base_path: 'data/cornell_movie-dialogs_corpus/'
+  conversation_fname: 'movie_conversations.txt'
+  line_fname: 'movie_lines.txt'
+  processed_path: 'tiny_processed_data'
+  max_seq_length: 60
+  word_threshold: 2
+  testset_size: 25000
+
+  PAD_ID: 0
+  UNK_ID: 1
+  START_ID: 2
+  EOS_ID: 3
+
+model:
+  num_layers: 1
+  num_units: 16
+  embed_dim: 16
+
+train:
+  batch_size: 2
+  learning_rate: 0.001
+  train_steps: 20000
+  model_dir: 'tiny_checkpoints'
+  save_every: 1000
+  learning_rate: 0.001
+  loss_hook_n_iter: 1
+  check_hook_n_iter: 10
+  min_eval_frequency: 1
