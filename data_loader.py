@@ -1,5 +1,6 @@
 from __future__ import print_function
 
+import argparse
 import os
 import random
 import re
@@ -261,5 +262,14 @@ def get_batch(data_bucket, bucket_id, batch_size=1):
 
 
 if __name__ == '__main__':
+
+    parser = argparse.ArgumentParser(
+                        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument('--config', type=str, default='config',
+                        help='config file name')
+    args = parser.parse_args()
+
+    Config(args.config)
+
     prepare_raw_data()
     process_data()
