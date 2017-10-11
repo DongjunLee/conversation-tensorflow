@@ -155,10 +155,6 @@ def token2id(data, mode):
     in_file = open(os.path.join(Config.data.processed_path, in_path), 'r')
     out_file = open(os.path.join(Config.data.processed_path, out_path), 'wb')
 
-    max_sentence_length = Config.data.max_seq_length
-    if mode == "dec":
-        max_sentence_length -= 2 # mode: dec  have start, end token
-
     lines = in_file.read().splitlines()
     for line in lines:
         if mode == 'dec':  # we only care about '<s>' and </s> in decoder
@@ -167,12 +163,10 @@ def token2id(data, mode):
             ids = []
 
         sentence_ids = sentence2id(vocab, line)
-        if len(sentence_ids) - 1 > max_sentence_length:
-            continue
-
         ids.extend(sentence_ids)
         if mode == 'dec':
             ids.append(vocab['<\s>'])
+
         out_file.write(b' '.join(str(id_).encode('cp1252') for id_ in ids) + b'\n')
 
 
@@ -196,14 +190,29 @@ def process_data():
 
 
 def make_train_and_test_set():
+    print("make Training data and Test data Start....")
+
+    set_max_seq_length(["train_ids.enc", "train_ids.dec", "test_ids.enc", "test_ids.dec"])
+
     train_X = load_data('train_ids.enc')
     train_y = load_data('train_ids.dec')
 
     test_X = load_data('test_ids.enc')
     test_y = load_data('test_ids.dec')
 
-    return train_X, test_X, train_y, test_y
+    print(len(train_X), len(train_y), len(test_X), len(test_y))
+    if len(train_X) == len(train_y) and len(test_X) == len(test_y):
+        print(f"train data count : {len(train_X)}")
+        print(f"test data count : {len(test_X)}")
+        return train_X, test_X, train_y, test_y
+    else:
+        train_count = min(len(train_X), len(train_y))
+        test_count = min(len(test_X), len(test_y))
 
+        print(f"train data count : {train_count}")
+        print(f"test data count : {test_count}")
+
+        return train_X[:train_count], test_X[:test_count], train_y[:train_count], test_y[:test_count]
 
 def load_data(fname):
     input_data = open(os.path.join(Config.data.processed_path, fname), 'r')
@@ -213,11 +222,31 @@ def load_data(fname):
         ids = [int(id_) for id_ in line.split()]
         ids = _pad_input(ids, Config.data.max_seq_length)
         data.append(ids)
+
+    print(f"load data from {fname}...")
     return np.array(data, dtype=np.int32)
 
 
 def _pad_input(input_, size):
     return input_ + [Config.data.PAD_ID] * (size - len(input_))
+
+
+def set_max_seq_length(dataset_fnames):
+
+    max_seq_length = Config.data.get('max_seq_length', 10)
+
+    for fname in dataset_fnames:
+        input_data = open(os.path.join(Config.data.processed_path, fname), 'r')
+
+        for line in input_data.readlines():
+            ids = [int(id_) for id_ in line.split()]
+            seq_length = len(ids)
+
+            if seq_length > max_seq_length:
+                max_seq_length = seq_length
+
+    Config.data.max_seq_length = max_seq_length
+    print(f"Setting max_seq_length to Config : {max_seq_length}")
 
 
 def _reshape_batch(inputs, size, batch_size):

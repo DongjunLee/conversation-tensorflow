@@ -3,7 +3,6 @@ data:
   conversation_fname: 'movie_conversations.txt'
   line_fname: 'movie_lines.txt'
   processed_path: 'processed_cornell_movie_dialogs_data'
-  max_seq_length: 60
   word_threshold: 2
   testset_size: 25000
 
