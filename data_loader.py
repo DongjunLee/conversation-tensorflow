@@ -135,8 +135,8 @@ def build_vocab(in_fname, out_fname, normalize_digits=True):
 
 
 def load_vocab(vocab_fname):
-    with open(os.path.join(Config.data.processed_path, vocab_fname), 'r') as f:
-        words = f.read().splitlines()
+    with open(os.path.join(Config.data.processed_path, vocab_fname), 'rb') as f:
+        words = f.read().decode('utf-8').splitlines()
     return {words[i]: i for i in range(len(words))}
 
 
@@ -195,7 +195,6 @@ def make_train_and_test_set():
     train_X, train_y = load_data('train_ids.enc', 'train_ids.dec')
     test_X, test_y = load_data('test_ids.enc', 'test_ids.dec')
 
-    print(len(train_X), len(train_y), len(test_X), len(test_y))
     if len(train_X) == len(train_y) and len(test_X) == len(test_y):
         print(f"train data count : {len(train_X)}")
         print(f"test data count : {len(test_X)}")
@@ -217,6 +216,9 @@ def load_data(enc_fname, dec_fname):
     for e_line, d_line in zip(enc_input_data.readlines(), dec_input_data.readlines()):
         e_ids = [int(id_) for id_ in e_line.split()]
         d_ids = [int(id_) for id_ in d_line.split()]
+
+        if len(e_ids) == 0 or len(d_ids) == 0:
+            continue
 
         if len(e_ids) <= Config.data.max_seq_length and len(d_ids) < Config.data.max_seq_length:
             enc_data.append(_pad_input(e_ids, Config.data.max_seq_length))
