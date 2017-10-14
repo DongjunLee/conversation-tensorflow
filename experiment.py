@@ -37,7 +37,7 @@ def experiment_fn(run_config, params):
         train_monitors=[
             train_input_hook,
             hook.print_variables(
-                variables=['training/input_0', 'training/output_0', 'prediction_0'],
+                variables=['training/input_0', 'training/output_0', 'training/pred_0'],
                 vocab=vocab,
                 every_n_iter=Config.train.check_hook_n_iter)],
         eval_hooks=[test_input_hook],
