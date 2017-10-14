@@ -16,12 +16,21 @@ class Seq2Seq:
         self.params = params
 
         self.input_data = features
+        if type(features) == dict:
+            self.input_data = features["input_data"]
         self.input_lengths = tf.reduce_sum(tf.to_int32(tf.not_equal(self.input_data, Config.data.PAD_ID)), 1)
 
-        self.outputs = labels
-        self.output_lengths = tf.reduce_sum(tf.to_int32(tf.not_equal(self.outputs, Config.data.PAD_ID)), 1)
+        if self.mode == tf.estimator.ModeKeys.PREDICT:
+            self.build_graph()
 
-        self.build_graph()
+            return tf.estimator.EstimatorSpec(
+                mode=mode,
+                predictions={"prediction": self.prediction})
+        else:
+            self.outputs = labels
+            self.output_lengths = tf.reduce_sum(tf.to_int32(tf.not_equal(self.outputs, Config.data.PAD_ID)), 1)
+
+            self.build_graph()
 
         return tf.estimator.EstimatorSpec(
             mode=mode,
@@ -35,9 +44,10 @@ class Seq2Seq:
         self._build_seq2seq_helper()
         self._build_encoder()
         self._build_decoder()
-        self._build_loss()
-        self._build_optimizer()
-        self._build_predictions()
+
+        if self.mode != tf.estimator.ModeKeys.PREDICT:
+            self._build_loss()
+            self._build_optimizer()
 
     def _build_embed(self):
         self.input_embed = layers.embed_sequence(
@@ -45,24 +55,27 @@ class Seq2Seq:
             vocab_size=Config.data.vocab_size,
             embed_dim=Config.model.embed_dim,
             scope='embed')
-        self.output_embed = layers.embed_sequence(
-            self.outputs,
-            vocab_size=Config.data.vocab_size,
-            embed_dim=Config.model.embed_dim,
-            scope='embed', reuse=True)
+
+        if self.mode != tf.estimator.ModeKeys.PREDICT:
+            self.output_embed = layers.embed_sequence(
+                self.outputs,
+                vocab_size=Config.data.vocab_size,
+                embed_dim=Config.model.embed_dim,
+                scope='embed', reuse=True)
 
     def _build_seq2seq_helper(self):
         with tf.variable_scope('embed', reuse=True):
             embeddings = tf.get_variable('embeddings')
 
-        self.train_helper = tf.contrib.seq2seq.TrainingHelper(
-                inputs=self.output_embed,
-                sequence_length=self.output_lengths)
-
-        self.pred_helper = tf.contrib.seq2seq.GreedyEmbeddingHelper(
-                embedding=embeddings,
-                start_tokens=tf.fill([Config.train.batch_size], Config.data.START_ID),
-                end_token=Config.data.EOS_ID)
+        if self.mode == tf.estimator.ModeKeys.PREDICT:
+            self.pred_helper = tf.contrib.seq2seq.GreedyEmbeddingHelper(
+                    embedding=embeddings,
+                    start_tokens=tf.fill([Config.train.batch_size], Config.data.START_ID),
+                    end_token=Config.data.EOS_ID)
+        else:
+            self.train_helper = tf.contrib.seq2seq.TrainingHelper(
+                    inputs=self.output_embed,
+                    sequence_length=self.output_lengths)
 
     def _build_encoder(self):
         with tf.variable_scope('encoder'):
@@ -107,12 +120,16 @@ class Seq2Seq:
                 return outputs[0]
 
         with tf.variable_scope('decoder'):
-            self.decoder_train_outputs = decode(self.train_helper, 'decode')
-            self.decoder_pred_outputs = decode(self.pred_helper, 'decode', reuse=True)
 
-            self.decoder_train_logits = self.decoder_train_outputs.rnn_output
+            if self.mode == tf.estimator.ModeKeys.PREDICT:
+                self.decoder_pred_outputs = decode(self.pred_helper, 'decode')
+                self.prediction = self.decoder_pred_outputs.sample_id
+            else:
+                self.decoder_train_outputs = decode(self.train_helper, 'decode')
+                self.decoder_train_logits = self.decoder_train_outputs.rnn_output
 
-        tf.argmax(self.decoder_train_logits[0], axis=1, name='training/pred_0')
+        if self.mode != tf.estimator.ModeKeys.PREDICT:
+            tf.argmax(self.decoder_train_logits[0], axis=1, name='training/pred_0')
 
     def _build_rnn_cells(self):
         stacked_rnn = []
@@ -148,6 +165,3 @@ class Seq2Seq:
             optimizer='Adam',
             learning_rate=Config.train.learning_rate,
             summaries=['loss', 'learning_rate'])
-
-    def _build_predictions(self):
-        tf.identity(self.decoder_pred_outputs.sample_id, name="prediction_0")
