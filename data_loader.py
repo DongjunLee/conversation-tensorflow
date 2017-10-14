@@ -192,13 +192,8 @@ def process_data():
 def make_train_and_test_set():
     print("make Training data and Test data Start....")
 
-    set_max_seq_length(["train_ids.enc", "train_ids.dec", "test_ids.enc", "test_ids.dec"])
-
-    train_X = load_data('train_ids.enc')
-    train_y = load_data('train_ids.dec')
-
-    test_X = load_data('test_ids.enc')
-    test_y = load_data('test_ids.dec')
+    train_X, train_y = load_data('train_ids.enc', 'train_ids.dec')
+    test_X, test_y = load_data('test_ids.enc', 'test_ids.dec')
 
     print(len(train_X), len(train_y), len(test_X), len(test_y))
     if len(train_X) == len(train_y) and len(test_X) == len(test_y):
@@ -214,17 +209,21 @@ def make_train_and_test_set():
 
         return train_X[:train_count], test_X[:test_count], train_y[:train_count], test_y[:test_count]
 
-def load_data(fname):
-    input_data = open(os.path.join(Config.data.processed_path, fname), 'r')
+def load_data(enc_fname, dec_fname):
+    enc_input_data = open(os.path.join(Config.data.processed_path, enc_fname), 'r')
+    dec_input_data = open(os.path.join(Config.data.processed_path, dec_fname), 'r')
 
-    data = []
-    for line in input_data.readlines():
-        ids = [int(id_) for id_ in line.split()]
-        ids = _pad_input(ids, Config.data.max_seq_length)
-        data.append(ids)
+    enc_data, dec_data = [], []
+    for e_line, d_line in zip(enc_input_data.readlines(), dec_input_data.readlines()):
+        e_ids = [int(id_) for id_ in e_line.split()]
+        d_ids = [int(id_) for id_ in d_line.split()]
 
-    print(f"load data from {fname}...")
-    return np.array(data, dtype=np.int32)
+        if len(e_ids) <= Config.data.max_seq_length and len(d_ids) < Config.data.max_seq_length:
+            enc_data.append(_pad_input(e_ids, Config.data.max_seq_length))
+            dec_data.append(_pad_input(d_ids, Config.data.max_seq_length))
+
+    print(f"load data from {enc_fname}, {dec_fname}...")
+    return np.array(enc_data, dtype=np.int32), np.array(dec_data, dtype=np.int32)
 
 
 def _pad_input(input_, size):

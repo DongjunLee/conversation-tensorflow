@@ -4,6 +4,7 @@ data:
   line_fname: 'movie_lines.txt'
   processed_path: 'processed_cornell_movie_dialogs_data'
   word_threshold: 2
+  max_seq_length: 200
   testset_size: 25000
 
   PAD_ID: 0
