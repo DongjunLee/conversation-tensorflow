@@ -111,7 +111,8 @@ class Seq2Seq:
             self.decoder_pred_outputs = decode(self.pred_helper, 'decode', reuse=True)
 
             self.decoder_train_logits = self.decoder_train_outputs.rnn_output
-            tf.argmax(self.decoder_train_logits[0], axis=1, name='training/pred_0')
+
+        tf.argmax(self.decoder_train_logits[0], axis=1, name='training/pred_0')
 
     def _build_rnn_cells(self):
         stacked_rnn = []
