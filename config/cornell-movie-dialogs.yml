@@ -19,7 +19,7 @@ model:
 
 train:
   batch_size: 32
-  learning_rate: 0.001
+  learning_rate: 0.0001
   train_steps: 100000
   model_dir: 'cornell_movie_dialogs_checkpoints'
   save_every: 1000

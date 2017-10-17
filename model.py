@@ -34,7 +34,7 @@ class Seq2Seq:
 
         return tf.estimator.EstimatorSpec(
             mode=mode,
-            predictions=self.decoder_pred_outputs.sample_id,
+            predictions=self.decoder_train_pred,
             loss=self.loss,
             train_op=self.train_op
         )
@@ -129,7 +129,7 @@ class Seq2Seq:
                 self.decoder_train_logits = self.decoder_train_outputs.rnn_output
 
         if self.mode != tf.estimator.ModeKeys.PREDICT:
-            tf.argmax(self.decoder_train_logits[0], axis=1, name='training/pred_0')
+            self.decoder_train_pred = tf.argmax(self.decoder_train_logits[0], axis=1, name='training/pred_0')
 
     def _build_rnn_cells(self):
         stacked_rnn = []
