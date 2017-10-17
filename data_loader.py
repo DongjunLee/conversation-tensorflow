@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from __future__ import print_function
 
 import argparse
@@ -27,9 +28,9 @@ def get_convos():
     """ Get conversations from the raw data """
     file_path = os.path.join(Config.data.base_path, Config.data.conversation_fname)
     convos = []
-    with open(file_path, 'r') as f:
+    with open(file_path, 'rb') as f:
         for line in f.readlines():
-            parts = line.split(' +++$+++ ')
+            parts = line.decode('iso-8859-1').split(' +++$+++ ')
             if len(parts) == 4:
                 convo = []
                 for line in parts[3][1:-2].split(', '):
@@ -60,15 +61,15 @@ def prepare_dataset(questions, answers):
     filenames = ['train.enc', 'train.dec', 'test.enc', 'test.dec']
     files = []
     for filename in filenames:
-        files.append(open(os.path.join(Config.data.processed_path, filename), 'w'))
+        files.append(open(os.path.join(Config.data.processed_path, filename), 'wb'))
 
     for i in range(len(questions)):
         if i in test_ids:
-            files[2].write(questions[i] + '\n')
-            files[3].write(answers[i] + '\n')
+            files[2].write((questions[i] + "\n").encode('utf-8'))
+            files[3].write((answers[i] + '\n').encode('utf-8'))
         else:
-            files[0].write(questions[i] + '\n')
-            files[1].write(answers[i] + '\n')
+            files[0].write((questions[i] + '\n').encode('utf-8'))
+            files[1].write((answers[i] + '\n').encode('utf-8'))
 
     for file in files:
         file.close()
@@ -105,8 +106,9 @@ def basic_tokenizer(line, normalize_digits=True):
 def build_vocab(in_fname, out_fname, normalize_digits=True):
     vocab = {}
     def count_vocab(fname):
-        with open(fname, 'r') as f:
+        with open(fname, 'rb') as f:
             for line in f.readlines():
+                line = line.decode('utf-8')
                 for token in basic_tokenizer(line):
                     if not token in vocab:
                         vocab[token] = 0
@@ -121,16 +123,16 @@ def build_vocab(in_fname, out_fname, normalize_digits=True):
     sorted_vocab = sorted(vocab, key=vocab.get, reverse=True)
 
     dest_path = os.path.join(Config.data.processed_path, 'vocab')
-    with open(dest_path, 'w') as f:
-        f.write('<pad>' + '\n')
-        f.write('<unk>' + '\n')
-        f.write('<s>' + '\n')
-        f.write('<\s>' + '\n')
+    with open(dest_path, 'wb') as f:
+        f.write(('<pad>' + '\n').encode('utf-8'))
+        f.write(('<unk>' + '\n').encode('utf-8'))
+        f.write(('<s>' + '\n').encode('utf-8'))
+        f.write(('<\s>' + '\n').encode('utf-8'))
         index = 4
         for word in sorted_vocab:
             if vocab[word] < Config.data.word_threshold:
                 pass
-            f.write(word + '\n')
+            f.write((word + '\n').encode('utf-8'))
             index += 1
 
 
@@ -153,10 +155,10 @@ def token2id(data, mode):
     out_path = data + '_ids.' + mode
 
     vocab = load_vocab(vocab_path)
-    in_file = open(os.path.join(Config.data.processed_path, in_path), 'r')
+    in_file = open(os.path.join(Config.data.processed_path, in_path), 'rb')
     out_file = open(os.path.join(Config.data.processed_path, out_path), 'wb')
 
-    lines = in_file.read().splitlines()
+    lines = in_file.read().decode('utf-8').splitlines()
     for line in lines:
         if mode == 'dec':  # we only care about '<s>' and </s> in decoder
             ids = [vocab['<s>']]
