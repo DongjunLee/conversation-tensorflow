@@ -35,3 +35,12 @@ def get_rev_vocab(vocab):
     if vocab is None:
         return None
     return {idx: key for key, idx in vocab.items()}
+
+
+def early_stopping():
+    return tf.contrib.learn.monitors.ValidationMonitor(
+        every_n_steps=100,
+        early_stopping_metric="loss",
+        early_stopping_metric_minimize=True,
+        early_stopping_rounds=300)
+
