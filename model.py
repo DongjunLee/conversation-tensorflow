@@ -4,6 +4,8 @@ from __future__ import print_function
 from hbconfig import Config
 import tensorflow as tf
 from tensorflow.contrib import layers
+from tensorflow.python.layers import core as layers_core
+
 
 
 class Seq2Seq:
@@ -43,6 +45,7 @@ class Seq2Seq:
         self._build_embed()
         self._build_seq2seq_helper()
         self._build_encoder()
+        self._build_projection()
         self._build_decoder()
 
         if self.mode != tf.estimator.ModeKeys.PREDICT:
@@ -87,6 +90,12 @@ class Seq2Seq:
                     dtype=tf.float32,
                     time_major=False)
 
+    def _build_projection(self):
+        # Projection
+        with tf.variable_scope("decoder/output_projection"):
+            self.output_layer = layers_core.Dense(
+                Config.data.vocab_size, use_bias=False, name="output_projection")
+
     def _build_decoder(self):
 
         def decode(helper, scope, reuse=None):
@@ -107,16 +116,31 @@ class Seq2Seq:
                 decoder_initial_state = out_cell.zero_state(Config.train.batch_size, tf.float32)
                 decoder_initial_state.clone(cell_state=self.encoder_final_state)
 
-                decoder = tf.contrib.seq2seq.BasicDecoder(
-                    cell=out_cell, helper=helper,
-                    initial_state=(decoder_initial_state))
+                if self.mode == tf.estimator.ModeKeys.PREDICT:
+                    decoder = tf.contrib.seq2seq.BasicDecoder(
+                        cell=out_cell,
+                        helper=helper,
+                        initial_state=(decoder_initial_state),
+                        output_layer=self.output_layer)
 
-                outputs = tf.contrib.seq2seq.dynamic_decode(
-                    decoder=decoder,
-                    output_time_major=False,
-                    impute_finished=True,
-                    maximum_iterations=tf.round(tf.reduce_max(self.input_lengths) * 2)
-                )
+                    outputs = tf.contrib.seq2seq.dynamic_decode(
+                        decoder=decoder,
+                        output_time_major=False,
+                        impute_finished=True,
+                        maximum_iterations=tf.round(tf.reduce_max(self.input_lengths) * 2)
+                    )
+
+                else:
+                    decoder = tf.contrib.seq2seq.BasicDecoder(
+                        cell=out_cell,
+                        helper=helper,
+                        initial_state=(decoder_initial_state))
+
+                    outputs = tf.contrib.seq2seq.dynamic_decode(
+                        decoder=decoder,
+                        output_time_major=False,
+                        swap_memory=True)
+
                 return outputs[0]
 
         with tf.variable_scope('decoder'):
@@ -146,7 +170,8 @@ class Seq2Seq:
                 [Config.train.batch_size, pad_num, Config.data.vocab_size],
                 dtype=tf.float32)
 
-        logits = tf.concat([self.decoder_train_logits, zero_padding], axis=1)
+        zero_padding_logits = tf.concat([self.decoder_train_logits, zero_padding], axis=1)
+        logits = self.output_layer(zero_padding_logits)
 
         weight_masks = tf.sequence_mask(
                 lengths=self.output_lengths,

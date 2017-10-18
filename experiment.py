@@ -39,8 +39,7 @@ def experiment_fn(run_config, params):
             hook.print_variables(
                 variables=['training/input_0', 'training/output_0', 'training/pred_0'],
                 vocab=vocab,
-                every_n_iter=Config.train.check_hook_n_iter),
-            hook.early_stopping(test_X, test_y)],
+                every_n_iter=Config.train.check_hook_n_iter)],
         eval_hooks=[test_input_hook],
         #eval_steps=None
     )

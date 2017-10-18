@@ -37,7 +37,7 @@ def get_train_inputs(X, y):
                 (input_placeholder, output_placeholder))
 
             dataset = dataset.repeat(None)  # Infinite iterations
-            #dataset = dataset.shuffle(buffer_size=10000)
+            dataset = dataset.shuffle(buffer_size=10000)
             dataset = dataset.batch(Config.train.batch_size)
 
             iterator = dataset.make_initializable_iterator()
