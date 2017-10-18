@@ -37,8 +37,9 @@ def get_rev_vocab(vocab):
     return {idx: key for key, idx in vocab.items()}
 
 
-def early_stopping():
+def early_stopping(input_fn):
     return tf.contrib.learn.monitors.ValidationMonitor(
+        input_fn=input_fn,
         every_n_steps=100,
         early_stopping_metric="loss",
         early_stopping_metric_minimize=True,

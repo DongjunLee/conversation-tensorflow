@@ -40,21 +40,8 @@ def experiment_fn(run_config, params):
                 variables=['training/input_0', 'training/output_0', 'training/pred_0'],
                 vocab=vocab,
                 every_n_iter=Config.train.check_hook_n_iter),
-            hook.early_stopping()],
+            hook.early_stopping(test_input_fn)],
         eval_hooks=[test_input_hook],
         #eval_steps=None
     )
     return experiment
-
-
-def early_stopping():
-
-    validation_monitor = tf.contrib.learn.monitors.ValidationMonitor(
-        test_set.data,
-        test_set.target,
-        every_n_steps=50,
-        metrics=validation_metrics,
-        early_stopping_metric="loss",
-        early_stopping_metric_minimize=True,
-        early_stopping_rounds=300)
-
