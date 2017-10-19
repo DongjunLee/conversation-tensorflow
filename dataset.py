@@ -21,7 +21,7 @@ def get_train_inputs(X, y):
     iterator_initializer_hook = IteratorInitializerHook()
 
     def train_inputs():
-        with tf.name_scope('training'):
+        with tf.name_scope('train'):
 
             nonlocal X
             nonlocal y
@@ -43,8 +43,8 @@ def get_train_inputs(X, y):
             iterator = dataset.make_initializable_iterator()
             next_X, next_y = iterator.get_next()
 
-            tf.identity(next_X[0], 'input_0')
-            tf.identity(next_y[0], 'output_0')
+            tf.identity(next_X[0], 'enc_0')
+            tf.identity(next_y[0], 'dec_0')
 
             # Set runhook to initialize iterator
             iterator_initializer_hook.iterator_initializer_func = \
@@ -87,8 +87,8 @@ def get_test_inputs(X, y):
             iterator = dataset.make_initializable_iterator()
             next_X, next_y = iterator.get_next()
 
-            tf.identity(next_X[0], 'input_0')
-            tf.identity(next_y[0], 'output_0')
+            tf.identity(next_X[0], 'enc_0')
+            tf.identity(next_y[0], 'dec_0')
 
             # Set runhook to initialize iterator
             iterator_initializer_hook.iterator_initializer_func = \

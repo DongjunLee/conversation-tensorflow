@@ -31,16 +31,13 @@ def experiment_fn(run_config, params):
         train_input_fn=train_input_fn,
         eval_input_fn=test_input_fn,
         train_steps=Config.train.train_steps,
-        #min_eval_frequency=Config.train.min_eval_frequency,
-        #train_monitors=hooks,
-        #eval_hooks=[test_input_hook],
+        min_eval_frequency=Config.train.min_eval_frequency,
         train_monitors=[
             train_input_hook,
             hook.print_variables(
-                variables=['training/input_0', 'training/output_0', 'training/pred_0'],
+                variables=['train/enc_0', 'train/dec_0', 'train/pred_0'],
                 vocab=vocab,
                 every_n_iter=Config.train.check_hook_n_iter)],
-        eval_hooks=[test_input_hook],
-        #eval_steps=None
+        eval_hooks=[test_input_hook]
     )
     return experiment

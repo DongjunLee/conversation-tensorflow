@@ -14,11 +14,10 @@ import hook
 
 def chat(ids, vocab):
 
+    print(ids)
+
     X = np.array(data_loader._pad_input(ids, Config.data.max_seq_length), dtype=np.int32)
     X = np.reshape(X, (1, Config.data.max_seq_length))
-
-    print(ids)
-    print(X)
 
     predict_input_fn = tf.estimator.inputs.numpy_input_fn(
             x={"input_data": X},
@@ -29,8 +28,6 @@ def chat(ids, vocab):
     result = estimator.predict(input_fn=predict_input_fn)
 
     prediction = next(result)["prediction"]
-
-    print(prediction, prediction.shape)
 
     rev_vocab = hook.get_rev_vocab(vocab)
     def to_str(sequence):
@@ -72,6 +69,7 @@ def main():
     while True:
         sentence = _get_user_input()
         ids = data_loader.sentence2id(vocab, sentence)
+        ids += [Config.data.START_ID]
 
         if len(ids) > Config.data.max_seq_length:
             print(f"Max length I can handle is: {Config.data.max_seq_length}")
