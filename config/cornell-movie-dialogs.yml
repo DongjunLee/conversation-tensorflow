@@ -15,15 +15,14 @@ data:
 model:
   num_layers: 3
   num_units: 512
-  embed_dim: 200
+  embed_dim: 256
 
 train:
   batch_size: 32
-  learning_rate: 0.0001
+  learning_rate: 0.001
   train_steps: 100000
-  model_dir: 'logs/cornell_movie_dialogs_checkpoints'
+  model_dir: 'logs/cornell_movie_dialogs'
   save_every: 1000
-  learning_rate: 0.0001
   loss_hook_n_iter: 1000
   check_hook_n_iter: 1000
   min_eval_frequency: 1000
