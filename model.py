@@ -69,11 +69,18 @@ class Seq2Seq:
 
     def _build_embed(self):
         with tf.variable_scope ("embeddings", dtype=self.dtype) as scope:
-            embedding = tf.get_variable(
-                "embedding_share", [Config.data.vocab_size, Config.model.embed_dim], self.dtype)
 
-            self.embedding_encoder = embedding
-            self.embedding_decoder = embedding
+            if Config.model.embed_share:
+                embedding = tf.get_variable(
+                    "embedding_share", [Config.data.vocab_size, Config.model.embed_dim], self.dtype)
+
+                self.embedding_encoder = embedding
+                self.embedding_decoder = embedding
+            else:
+                self.embedding_encoder = tf.get_variable(
+                    "embedding_encoder", [Config.data.vocab_size, Config.model.embed_dim], self.dtype)
+                self.embedding_decoder = tf.get_variable(
+                    "embedding_decdoer", [Config.data.vocab_size, Config.model.embed_dim], self.dtype)
 
             self.encoder_emb_inp = tf.nn.embedding_lookup(
                 self.embedding_encoder, self.encoder_input)
@@ -83,9 +90,6 @@ class Seq2Seq:
                     self.embedding_decoder, self.decoder_input)
 
     def _build_seq2seq_helper(self):
-        with tf.variable_scope('embeddings', reuse=True):
-            embedding_share = tf.get_variable('embedding_share')
-
         if self.mode == tf.estimator.ModeKeys.PREDICT:
             self.pred_helper = tf.contrib.seq2seq.GreedyEmbeddingHelper(
                     embedding=self.embedding_decoder,

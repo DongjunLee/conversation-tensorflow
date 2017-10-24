@@ -16,6 +16,7 @@ model:
   num_layers: 3
   num_units: 512
   embed_dim: 256
+  embed_share: false
 
 train:
   batch_size: 32
