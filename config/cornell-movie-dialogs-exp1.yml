@@ -1,0 +1,29 @@
+data:
+  base_path: 'data/cornell_movie_dialogs_corpus/'
+  conversation_fname: 'movie_conversations.txt'
+  line_fname: 'movie_lines.txt'
+  processed_path: 'processed_cornell_movie_dialogs_data'
+  word_threshold: 2
+  max_seq_length: 150
+  testset_size: 25000
+
+  PAD_ID: 0
+  UNK_ID: 1
+  START_ID: 2
+  EOS_ID: 3
+
+model:
+  num_layers: 3
+  num_units: 1024
+  embed_dim: 300
+  embed_share: false
+
+train:
+  batch_size: 32
+  learning_rate: 0.001
+  train_steps: 100000
+  model_dir: 'logs/cornell_movie_dialogs-exp1'
+  save_every: 1000
+  loss_hook_n_iter: 1000
+  check_hook_n_iter: 1000
+  min_eval_frequency: 1000

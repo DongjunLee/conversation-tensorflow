@@ -14,8 +14,6 @@ import hook
 
 def chat(ids, vocab):
 
-    print(ids)
-
     X = np.array(data_loader._pad_input(ids, Config.data.max_seq_length), dtype=np.int32)
     X = np.reshape(X, (1, Config.data.max_seq_length))
 
@@ -69,7 +67,7 @@ def main():
     while True:
         sentence = _get_user_input()
         ids = data_loader.sentence2id(vocab, sentence)
-        ids += [Config.data.START_ID]
+        # ids += [Config.data.START_ID]
 
         if len(ids) > Config.data.max_seq_length:
             print(f"Max length I can handle is: {Config.data.max_seq_length}")

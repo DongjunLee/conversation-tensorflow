@@ -27,7 +27,12 @@ def format_variable(keys, vocab=None):
                 result.append(f"{key} = {values[key]}")
             else:
                 result.append(f"{key} = {to_str(values[key])}")
-        print('\n - '.join(result))
+
+        try:
+            print('\n - '.join(result))
+        except:
+            pass
+
     return format
 
 
