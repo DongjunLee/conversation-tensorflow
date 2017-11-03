@@ -181,12 +181,40 @@ class Seq2Seq:
 
     def _build_rnn_cells(self):
         stacked_rnn = []
+
         for _ in range(Config.model.num_layers):
-            single_cell = tf.contrib.rnn.GRUCell(num_units=Config.model.num_units)
+            single_cell = self._single_cell(Config.model.cell_type, Config.model.dropout)
             stacked_rnn.append(single_cell)
+
         return tf.nn.rnn_cell.MultiRNNCell(
                 cells=stacked_rnn,
                 state_is_tuple=True)
+
+    def _single_cell(self, cell_type, dropout):
+        if cell_type == "GRU":
+            single_cell = tf.contrib.rnn.GRUCell(
+                Config.model.num_units,
+                forget_bias=1.0)
+        elif cell_type == "LSTM":
+            single_cell = tf.contrib.rnn.BasicLSTMCell(
+                Config.model.num_units,
+                forget_bias=1.0)
+        elif cell_type == "LAYER_NORM_LSTM":
+            single_cell = tf.contrib.rnn.LayerNormBasicLSTMCell(
+                Config.model.num_units,
+                forget_bias=1.0,
+                layer_norm=True)
+        elif cell_type == "NAS":
+            single_cell = tf.contrib.rnn.LayerNormBasicLSTMCell(
+                Config.model.num_units)
+        else:
+            raise ValueError(f"Unknown rnn cell type. {cell_type}")
+
+        if dropout > 0.0:
+            single_cell = tf.contrib.rnn.DropoutWrapper(
+                cell=single_cell, input_keep_prob=(1.0 - dropout))
+
+        return single_cell
 
     def _build_loss(self):
         pad_num = Config.data.max_seq_length - tf.shape(self.decoder_train_logits)[1]

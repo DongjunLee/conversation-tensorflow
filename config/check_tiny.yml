@@ -17,6 +17,8 @@ model:
   num_units: 16
   embed_dim: 16
   embed_share: false
+  cell_type: LSTM
+  dropout: 0.2
 
 train:
   batch_size: 2

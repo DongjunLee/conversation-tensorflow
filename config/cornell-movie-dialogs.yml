@@ -17,6 +17,8 @@ model:
   num_units: 512
   embed_dim: 256
   embed_share: false
+  cell_type: LSTM
+  dropout: 0.2
 
 train:
   batch_size: 32

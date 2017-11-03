@@ -13,16 +13,16 @@ data:
   EOS_ID: 3
 
 model:
-  num_layers: 3
+  num_layers: 4
   num_units: 1024
   embed_dim: 300
-  embed_share: false
-  cell_type: LSTM
+  embed_share: true
+  cell_type: LAYER_NORM_LSTM
   dropout: 0.2
 
 train:
-  batch_size: 32
-  learning_rate: 0.001
+  batch_size: 64
+  learning_rate: 0.0001
   train_steps: 100000
   model_dir: 'logs/cornell_movie_dialogs-exp1'
   save_every: 1000
