@@ -2,9 +2,9 @@ data:
   base_path: 'data/cornell_movie_dialogs_corpus/'
   conversation_fname: 'movie_conversations.txt'
   line_fname: 'movie_lines.txt'
-  processed_path: 'processed_cornell_movie_dialogs_data'
+  processed_path: 'processed_cornell_movie_dialogs_data-exp2'
   word_threshold: 2
-  max_seq_length: 150
+  max_seq_length: 100
   testset_size: 25000
 
   PAD_ID: 0
@@ -24,7 +24,7 @@ train:
   batch_size: 64
   learning_rate: 0.0001
   train_steps: 100000
-  model_dir: 'logs/cornell_movie_dialogs-exp1'
+  model_dir: 'logs/cornell_movie_dialogs-exp2'
   save_every: 1000
   loss_hook_n_iter: 1000
   check_hook_n_iter: 1000
