@@ -33,7 +33,7 @@ def get_train_inputs(X, y):
                 tf.int32, [None, None])
 
             # Build dataset iterator
-            dataset = tf.contrib.data.Dataset.from_tensor_slices(
+            dataset = tf.data.Dataset.from_tensor_slices(
                 (input_placeholder, output_placeholder))
 
             dataset = dataset.repeat(None)  # Infinite iterations
@@ -77,7 +77,7 @@ def get_test_inputs(X, y):
                 tf.int32, [None, None])
 
             # Build dataset iterator
-            dataset = tf.contrib.data.Dataset.from_tensor_slices(
+            dataset = tf.data.Dataset.from_tensor_slices(
                 (input_placeholder, output_placeholder))
 
             dataset = dataset.repeat(None)  # Infinite iterations

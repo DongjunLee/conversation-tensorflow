@@ -5,7 +5,7 @@ TensorFLow Sequence-to-Sequence Models for Conversation
 ## Requirements
 
 - Python 3.6
-- TensorFlow >= 1.3
+- TensorFlow 1.4
 - hb-config
 
 ## Features
