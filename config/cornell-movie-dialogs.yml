@@ -16,8 +16,8 @@ model:
   num_layers: 3
   num_units: 512
   embed_dim: 256
-  embed_share: false
-  cell_type: LSTM
+  embed_share: true
+  cell_type: GRU
   dropout: 0.2
 
 train:

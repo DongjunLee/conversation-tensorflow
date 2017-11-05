@@ -15,6 +15,7 @@ TensorFLow Sequence-to-Sequence Models for Conversation
 	- [Experiment](https://www.tensorflow.org/api_docs/python/tf/contrib/learn/Experiment)
 	- [Dataset](https://www.tensorflow.org/api_docs/python/tf/contrib/data/Dataset)
 
+
 ## Todo
 
 - apply Beam Search (tensorflow error..)
@@ -22,7 +23,51 @@ TensorFLow Sequence-to-Sequence Models for Conversation
 - train with other dataset.
 - make dataset Korean dialog corpus like [Cornell_Movie-Dialogs_Corpus](https://www.cs.cornell.edu/~cristian/Cornell_Movie-Dialogs_Corpus.html)
 
+## Config
+
+example: cornell-movie-dialogs.yml
+
+```yml
+data:
+  base_path: 'data/cornell_movie_dialogs_corpus/'
+  conversation_fname: 'movie_conversations.txt'
+  line_fname: 'movie_lines.txt'
+  processed_path: 'processed_cornell_movie_dialogs_data'
+  word_threshold: 2
+  max_seq_length: 200
+  testset_size: 25000
+
+  PAD_ID: 0
+  UNK_ID: 1
+  START_ID: 2
+  EOS_ID: 3
+
+model:
+  num_layers: 3
+  num_units: 512
+  embed_dim: 256
+  embed_share: true (true or false)
+  cell_type: GRU  (LSTM, GRU, LAYER_NORM_LSTM, NAS)
+  beam_width: 0  (0: GreedyEmbeddingHelper)
+  dropout: 0.2
+
+train:
+  batch_size: 32
+  learning_rate: 0.001
+  train_steps: 100000
+  model_dir: 'logs/cornell_movie_dialogs'
+  save_every: 1000
+  loss_hook_n_iter: 1000
+  check_hook_n_iter: 1000
+  min_eval_frequency: 1000
+```
+
+
 ## Usage
+
+Install requirements.
+
+```pip install -r requirements.txt```
 
 First, check if the model is valid.
 
