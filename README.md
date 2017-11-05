@@ -43,7 +43,7 @@ After training, start chatting.
 
 ## Conversation Example
 
-- > (Human)
+\> (Human)
 
 ```
 > hi.
