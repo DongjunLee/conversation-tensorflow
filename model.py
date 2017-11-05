@@ -193,8 +193,7 @@ class Seq2Seq:
     def _single_cell(self, cell_type, dropout):
         if cell_type == "GRU":
             single_cell = tf.contrib.rnn.GRUCell(
-                Config.model.num_units,
-                forget_bias=1.0)
+                Config.model.num_units)
         elif cell_type == "LSTM":
             single_cell = tf.contrib.rnn.BasicLSTMCell(
                 Config.model.num_units,

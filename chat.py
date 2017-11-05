@@ -1,6 +1,7 @@
 #-*- coding: utf-8 -*-
 
 import argparse
+import os
 import sys
 
 from hbconfig import Config
@@ -67,7 +68,7 @@ def main():
     while True:
         sentence = _get_user_input()
         ids = data_loader.sentence2id(vocab, sentence)
-        # ids += [Config.data.START_ID]
+        ids += [Config.data.START_ID]
 
         if len(ids) > Config.data.max_seq_length:
             print(f"Max length I can handle is: {Config.data.max_seq_length}")
@@ -87,5 +88,8 @@ if __name__ == '__main__':
 
     Config(args.config)
     Config.train.batch_size = 1
+
+    os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+    tf.logging.set_verbosity(tf.logging.ERROR)
 
     main()

@@ -17,7 +17,7 @@ model:
   num_units: 1024
   embed_dim: 300
   embed_share: false
-  cell_type: LSTM
+  cell_type: GRU
   dropout: 0.2
 
 train:
