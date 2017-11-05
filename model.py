@@ -58,7 +58,6 @@ class Seq2Seq:
 
     def build_graph(self):
         self._build_embed()
-        self._build_seq2seq_helper()
         self._build_encoder()
         # self._build_projection()
         self._build_decoder()
@@ -89,17 +88,6 @@ class Seq2Seq:
                 self.decoder_emb_inp = tf.nn.embedding_lookup(
                     self.embedding_decoder, self.decoder_input)
 
-    def _build_seq2seq_helper(self):
-        if self.mode == tf.estimator.ModeKeys.PREDICT:
-            self.pred_helper = tf.contrib.seq2seq.GreedyEmbeddingHelper(
-                    embedding=self.embedding_decoder,
-                    start_tokens=tf.fill([Config.train.batch_size], Config.data.START_ID),
-                    end_token=Config.data.EOS_ID)
-        else:
-            self.train_helper = tf.contrib.seq2seq.TrainingHelper(
-                    inputs=self.decoder_emb_inp,
-                    sequence_length=self.decoder_input_lengths)
-
     def _build_encoder(self):
         with tf.variable_scope('encoder'):
             cells = self._build_rnn_cells()
@@ -118,7 +106,7 @@ class Seq2Seq:
 
     def _build_decoder(self):
 
-        def decode(helper, scope):
+        def decode(helper=None, scope="decode"):
             with tf.variable_scope(scope):
                 attention_mechanism = tf.contrib.seq2seq.BahdanauAttention(
                     num_units=Config.model.num_units, memory=self.encoder_outputs,
@@ -126,11 +114,14 @@ class Seq2Seq:
 
                 cells = self._build_rnn_cells()
 
+                alignment_history = (self.mode == tf.estimator.ModeKeys.PREDICT and
+                         beam_width == 0)
+
                 attn_cell = tf.contrib.seq2seq.AttentionWrapper(
                     cells,
                     attention_mechanism,
                     attention_layer_size=Config.model.num_units,
-                    alignment_history=True,
+                    alignment_history=alignment_history,
                     name="attention")
 
                 out_cell = tf.contrib.rnn.OutputProjectionWrapper(
@@ -140,17 +131,36 @@ class Seq2Seq:
                 decoder_initial_state.clone(cell_state=self.encoder_final_state)
 
                 if self.mode == tf.estimator.ModeKeys.PREDICT:
-                    decoder = tf.contrib.seq2seq.BasicDecoder(
-                        cell=out_cell,
-                        helper=helper,
-                        initial_state=(decoder_initial_state))
 
-                    outputs = tf.contrib.seq2seq.dynamic_decode(
-                        decoder=decoder,
-                        output_time_major=False,
-                        impute_finished=True,
-                        maximum_iterations=tf.round(tf.reduce_max(self.encoder_input_lengths) * 2)
-                    )
+                    maximum_iterations = tf.round(tf.reduce_max(self.encoder_input_lengths) * 2)
+
+                    if helper is None:
+                        decoder = tf.contrib.seq2seq.BeamSearchDecoder(
+                            cell=out_cell,
+                            embedding=self.embedding_decoder,
+                            start_tokens=tf.fill([Config.train.batch_size], Config.data.START_ID),
+                            end_token=Config.data.EOS_ID,
+                            initial_state=(decoder_initial_state),
+                            beam_width=Config.predict.beam_width,
+                            length_penalty_weight=Config.predict.length_penalty_weight)
+
+                        outputs = tf.contrib.seq2seq.dynamic_decode(
+                            decoder=decoder,
+                            output_time_major=False,
+                            impute_finished=False,
+                            maximum_iterations=maximum_iterations)
+
+                    else:
+                        decoder = tf.contrib.seq2seq.BasicDecoder(
+                            cell=out_cell,
+                            helper=helper,
+                            initial_state=(decoder_initial_state))
+
+                        outputs = tf.contrib.seq2seq.dynamic_decode(
+                            decoder=decoder,
+                            output_time_major=False,
+                            impute_finished=True,
+                            maximum_iterations=maximum_iterations)
 
                 else:
                     decoder = tf.contrib.seq2seq.BasicDecoder(
@@ -168,11 +178,25 @@ class Seq2Seq:
         with tf.variable_scope('decoder'):
 
             if self.mode == tf.estimator.ModeKeys.PREDICT:
-                self.decoder_pred_outputs = decode(self.pred_helper, 'decode')
-                self.prediction = self.decoder_pred_outputs.sample_id
-                # self.decoder_train_pred = tf.argmax(self.decoder_train_logits[0], axis=1, name='train/pred_0')
-                # self.prediction = tf.argmax(self.decoder_pred_outputs.rnn_output, axis=1, name='prediction')
+
+                beam_width = Config.predict.get('beam_width', 0)
+                if beam_width > 0 :
+                    self.decoder_pred_outputs = decode()
+                    self.prediction = self.decoder_pred_outputs.predicted_ids
+                else:
+                    self.pred_helper = tf.contrib.seq2seq.GreedyEmbeddingHelper(
+                        embedding=self.embedding_decoder,
+                        start_tokens=tf.fill([Config.train.batch_size], Config.data.START_ID),
+                        end_token=Config.data.EOS_ID)
+
+                    self.decoder_pred_outputs = decode(helper=self.pred_helper)
+                    self.prediction = self.decoder_pred_outputs.sample_id
+
             else:
+                self.train_helper = tf.contrib.seq2seq.TrainingHelper(
+                    inputs=self.decoder_emb_inp,
+                    sequence_length=self.decoder_input_lengths)
+
                 self.decoder_train_outputs = decode(self.train_helper, 'decode')
                 self.decoder_train_logits = self.decoder_train_outputs.rnn_output
 
@@ -222,7 +246,6 @@ class Seq2Seq:
                 dtype=tf.float32)
 
         zero_padding_logits = tf.concat([self.decoder_train_logits, zero_padding], axis=1)
-        #logits = self.output_layer(zero_padding_logits)
 
         weight_masks = tf.sequence_mask(
                 lengths=self.decoder_input_lengths,
