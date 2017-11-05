@@ -79,7 +79,7 @@ class Seq2Seq:
                 self.embedding_encoder = tf.get_variable(
                     "embedding_encoder", [Config.data.vocab_size, Config.model.embed_dim], self.dtype)
                 self.embedding_decoder = tf.get_variable(
-                    "embedding_decdoer", [Config.data.vocab_size, Config.model.embed_dim], self.dtype)
+                    "embedding_decoder", [Config.data.vocab_size, Config.model.embed_dim], self.dtype)
 
             self.encoder_emb_inp = tf.nn.embedding_lookup(
                 self.embedding_encoder, self.encoder_input)
