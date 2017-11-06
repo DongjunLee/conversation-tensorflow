@@ -22,6 +22,13 @@ TensorFLow Sequence-to-Sequence Models for Conversation
 - need to preprocessing data.
 - train with other dataset.
 - make dataset Korean dialog corpus like [Cornell_Movie-Dialogs_Corpus](https://www.cs.cornell.edu/~cristian/Cornell_Movie-Dialogs_Corpus.html)
+- Incorporating Context Challenge
+	-  [Building End-To-End Dialogue Systems
+Using Generative Hierarchical Neural Network Models](https://arxiv.org/pdf/1507.04808.pdf)
+- Coherent Personality Challenge
+	- [A Persona-Based Neural Conversation Model](https://arxiv.org/abs/1603.06155)
+- Intention and Diversity
+	- [A Diversity-Promoting Objective Function for Neural Conversation Models](https://arxiv.org/abs/1510.03055)
 
 ## Config
 
