@@ -98,6 +98,11 @@ class Seq2Seq:
                     dtype=tf.float32,
                     time_major=False)
 
+            beam_width = Config.predict.get('beam_width', 0)
+            if self.mode == tf.estimator.ModeKeys.PREDICT and beam_width > 0 :
+                self.encoder_outputs = tf.contrib.seq2seq.tile_batch(self.encoder_outputs, beam_width)
+                self.encoder_input_lengths = tf.contrib.seq2seq.tile_batch(self.encoder_input_lengths, beam_width)
+
     def _build_projection(self):
         # Projection
         with tf.variable_scope("decoder/output_projection"):
@@ -107,6 +112,7 @@ class Seq2Seq:
     def _build_decoder(self):
 
         def decode(helper=None, scope="decode"):
+
             with tf.variable_scope(scope):
                 attention_mechanism = tf.contrib.seq2seq.BahdanauAttention(
                     num_units=Config.model.num_units, memory=self.encoder_outputs,
@@ -114,6 +120,7 @@ class Seq2Seq:
 
                 cells = self._build_rnn_cells()
 
+                beam_width = Config.predict.get('beam_width', 0)
                 alignment_history = (self.mode == tf.estimator.ModeKeys.PREDICT and
                          beam_width == 0)
 
@@ -127,14 +134,15 @@ class Seq2Seq:
                 out_cell = tf.contrib.rnn.OutputProjectionWrapper(
                     attn_cell, Config.data.vocab_size)
 
-                decoder_initial_state = out_cell.zero_state(Config.train.batch_size, self.dtype)
-                decoder_initial_state.clone(cell_state=self.encoder_final_state)
-
                 if self.mode == tf.estimator.ModeKeys.PREDICT:
 
                     maximum_iterations = tf.round(tf.reduce_max(self.encoder_input_lengths) * 2)
 
                     if helper is None:
+                        decoder_start_state = tf.contrib.seq2seq.tile_batch(self.encoder_final_state, beam_width)
+                        decoder_initial_state = out_cell.zero_state(Config.train.batch_size * beam_width, self.dtype)
+                        decoder_initial_state.clone(cell_state=decoder_start_state)
+
                         decoder = tf.contrib.seq2seq.BeamSearchDecoder(
                             cell=out_cell,
                             embedding=self.embedding_decoder,
@@ -151,6 +159,9 @@ class Seq2Seq:
                             maximum_iterations=maximum_iterations)
 
                     else:
+                        decoder_initial_state = out_cell.zero_state(Config.train.batch_size, self.dtype)
+                        decoder_initial_state.clone(cell_state=self.encoder_final_state)
+
                         decoder = tf.contrib.seq2seq.BasicDecoder(
                             cell=out_cell,
                             helper=helper,

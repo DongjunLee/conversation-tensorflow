@@ -28,6 +28,35 @@ def chat(ids, vocab):
 
     prediction = next(result)["prediction"]
 
+    beam_width = Config.predict.get('beam_width', 0)
+    if beam_width > 0:
+
+        def select_by_score(predictions):
+            p_list = list(predictions)
+
+            scores = []
+            for p in p_list:
+                score = 0
+
+                unknown_count = len(list(filter(lambda x: x == -1, p)))
+                score -= 2 * unknown_count
+
+                eos_except_last_count = len(list(filter(lambda x: x == Config.data.EOS_ID, p[:-1])))
+                score -= 2 * eos_except_last_count
+
+                distinct_id_count = len(list(set(p)))
+                score += 1 * distinct_id_count
+
+                if eos_except_last_count == 0 and p[-1] == Config.data.EOS_ID:
+                    score += 5
+
+                scores.append(score)
+
+            max_score_index = scores.index(max(scores))
+            return predictions[max_score_index]
+
+        prediction = select_by_score(prediction)
+
     rev_vocab = hook.get_rev_vocab(vocab)
     def to_str(sequence):
         tokens = [
