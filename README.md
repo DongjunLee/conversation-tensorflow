@@ -14,11 +14,12 @@ TensorFLow Sequence-to-Sequence Models for Conversation
 	- [Estimator](https://www.tensorflow.org/api_docs/python/tf/estimator/Estimator)
 	- [Experiment](https://www.tensorflow.org/api_docs/python/tf/contrib/learn/Experiment)
 	- [Dataset](https://www.tensorflow.org/api_docs/python/tf/contrib/data/Dataset)
+- Attention
+- BeamSearchDecoder
 
 
 ## Todo
 
-- apply Beam Search (tensorflow error..)
 - need to preprocessing data.
 - train with other dataset.
 - make dataset Korean dialog corpus like [Cornell_Movie-Dialogs_Corpus](https://www.cs.cornell.edu/~cristian/Cornell_Movie-Dialogs_Corpus.html)
@@ -67,6 +68,10 @@ train:
   loss_hook_n_iter: 1000
   check_hook_n_iter: 1000
   min_eval_frequency: 1000
+  
+predict:
+  beam_width: 5
+  length_penalty_weight: 1.0
 ```
 
 
