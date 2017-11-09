@@ -1,0 +1,4 @@
+data/*
+__pycache__/
+logs/
+processed_cornell_movie_dialogs_data/
