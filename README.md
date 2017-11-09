@@ -94,7 +94,7 @@ python main.py --config cornell-movie-dialogs --mode train_and_evaluate
 
 After training, start chatting.
 
-```python chat --config cornell-movie-dialogs```
+```python chat.py --config cornell-movie-dialogs```
 
 
 
