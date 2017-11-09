@@ -174,6 +174,8 @@ class Seq2Seq:
                             maximum_iterations=maximum_iterations)
 
                 else:
+                    decoder_initial_state = out_cell.zero_state(Config.train.batch_size, self.dtype)
+                    decoder_initial_state.clone(cell_state=self.encoder_final_state)
                     decoder = tf.contrib.seq2seq.BasicDecoder(
                         cell=out_cell,
                         helper=helper,
