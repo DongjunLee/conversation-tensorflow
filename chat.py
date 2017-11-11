@@ -11,6 +11,7 @@ import tensorflow as tf
 import data_loader
 from model import Seq2Seq
 import hook
+import time
 
 
 def chat(ids, vocab):
