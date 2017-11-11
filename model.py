@@ -91,7 +91,7 @@ class Seq2Seq:
         with tf.variable_scope('encoder'):
             if Config.model.encoder_type == "uni":
 
-                cells = self._build_rnn_cells()
+                cells = self._build_rnn_cells(Config.model.num_units)
                 self.encoder_outputs, self.encoder_final_state = tf.nn.dynamic_rnn(
                         cells,
                         self.encoder_emb_inp,
