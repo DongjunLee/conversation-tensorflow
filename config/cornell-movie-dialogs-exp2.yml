@@ -19,6 +19,7 @@ model:
   embed_share: true
   cell_type: LAYER_NORM_LSTM
   dropout: 0.2
+  encoder_type: uni
 
 train:
   batch_size: 64

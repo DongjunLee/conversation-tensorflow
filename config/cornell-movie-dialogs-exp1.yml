@@ -19,6 +19,7 @@ model:
   embed_share: false
   cell_type: GRU
   dropout: 0.2
+  encoder_type: uni
 
 train:
   batch_size: 32
