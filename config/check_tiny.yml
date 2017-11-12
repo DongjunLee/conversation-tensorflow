@@ -20,6 +20,7 @@ model:
   cell_type: LSTM
   dropout: 0.2
   encoder_type: bi
+  attention_mechanism: bahdanau
 
 train:
   batch_size: 2
@@ -30,7 +31,7 @@ train:
   loss_hook_n_iter: 1
   check_hook_n_iter: 10
   min_eval_frequency: 10
-  
+
 
 predict:
   beam_width: 5

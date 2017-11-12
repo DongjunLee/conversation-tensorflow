@@ -18,7 +18,8 @@ TensorFLow Sequence-to-Sequence Models for Conversation
 	- Unidirectional RNN
 	- Stack Bidirectional RNN
 - Attention
-	- BahdanauAttention
+	- BahdanauAttention (option Norm)
+	- LuongAttention (option Scale)
 - Decoder
 	- GreedyEmbeddingHelper
 	- BeamSearchDecoder
@@ -28,7 +29,6 @@ TensorFLow Sequence-to-Sequence Models for Conversation
 
 - need to preprocessing data.
 - train with other dataset. ([Twitter chat_corpus](https://github.com/Marsan-Ma/chat_corpus))
-- add [LuongAttention](https://www.tensorflow.org/api_docs/python/tf/contrib/seq2seq/LuongAttention) and parameter (norm and scale)
 - make dataset Korean dialog corpus like [Cornell_Movie-Dialogs_Corpus](https://www.cs.cornell.edu/~cristian/Cornell_Movie-Dialogs_Corpus.html)
 - Implements CopyNet
 	- [Incorporating Copying Mechanism in Sequence-to-Sequence Learning](https://arxiv.org/abs/1603.06393) by J, Gu 2016.
@@ -71,6 +71,7 @@ model:
   beam_width: 0  (0: GreedyEmbeddingHelper)
   dropout: 0.2
   encoder_type: bi  (uni / bi)
+  attention_mechanism: normed_bahdanau (bahdanau, normed_bahdanau, luong, scaled_luong)
 
 train:
   batch_size: 32

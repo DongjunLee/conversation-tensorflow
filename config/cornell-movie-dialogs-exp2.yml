@@ -20,6 +20,7 @@ model:
   cell_type: LAYER_NORM_LSTM
   dropout: 0.2
   encoder_type: uni
+  attention_mechanism: normed_bahdanau
 
 train:
   batch_size: 64

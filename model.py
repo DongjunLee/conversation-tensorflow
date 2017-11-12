@@ -141,14 +141,49 @@ class Seq2Seq:
             self.output_layer = layers_core.Dense(
                 Config.data.vocab_size, use_bias=False, name="output_projection")
 
+    def _create_attention_mechanism(self):
+
+        num_units = Config.model.num_units
+        if Config.model.encoder_type == "bi" and "luong" in Config.model.attention_mechanism:
+            num_units *= 2
+        memory = self.encoder_outputs
+
+        if Config.model.attention_mechanism == "bahdanau":
+            attention_mechanism = tf.contrib.seq2seq.BahdanauAttention(
+                    num_units,
+                    memory,
+                    memory_sequence_length=self.encoder_input_lengths)
+
+        elif Config.model.attention_mechanism == "normed_bahdanau":
+            attention_mechanism = tf.contrib.seq2seq.BahdanauAttention(
+                    num_units,
+                    memory,
+                    memory_sequence_length=self.encoder_input_lengths,
+                    normalize=True)
+
+        elif Config.model.attention_mechanism == "luong":
+            attention_mechanism = tf.contrib.seq2seq.LuongAttention(
+                    num_units * 2,
+                    memory,
+                    memory_sequence_length=self.encoder_input_lengths)
+
+        elif Config.model.attention_mechanism == "scaled_luong":
+            attention_mechanism = tf.contrib.seq2seq.LuongAttention(
+                    num_units,
+                    memory,
+                    memory_sequence_length=self.encoder_input_lengths,
+                    scale=True)
+        else:
+            raise ValueError(f"Unknown attention mechanism {Config.model.attention_mechanism}")
+
+        return attention_mechanism
+
     def _build_decoder(self):
 
         def decode(helper=None, scope="decode"):
 
             with tf.variable_scope(scope):
-                attention_mechanism = tf.contrib.seq2seq.BahdanauAttention(
-                    num_units=Config.model.num_units, memory=self.encoder_outputs,
-                    memory_sequence_length=self.encoder_input_lengths)
+                attention_mechanism = self._create_attention_mechanism()
 
                 if Config.model.encoder_type == "uni":
                     cells = self._build_rnn_cells(Config.model.num_units)

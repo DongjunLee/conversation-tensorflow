@@ -20,6 +20,7 @@ model:
   cell_type: GRU
   dropout: 0.2
   encoder_type: bi
+  attention_mechanism: normed_bahdanau
 
 train:
   batch_size: 32
