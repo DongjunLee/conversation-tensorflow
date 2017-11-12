@@ -59,7 +59,6 @@ class Seq2Seq:
     def build_graph(self):
         self._build_embed()
         self._build_encoder()
-        # self._build_projection()
         self._build_decoder()
 
         if self.mode != tf.estimator.ModeKeys.PREDICT:
@@ -90,13 +89,39 @@ class Seq2Seq:
 
     def _build_encoder(self):
         with tf.variable_scope('encoder'):
-            cells = self._build_rnn_cells()
-            self.encoder_outputs, self.encoder_final_state = tf.nn.dynamic_rnn(
-                    cells,
-                    self.encoder_emb_inp,
-                    sequence_length=self.encoder_input_lengths,
-                    dtype=tf.float32,
-                    time_major=False)
+            if Config.model.encoder_type == "uni":
+
+                cells = self._build_rnn_cells(Config.model.num_units)
+                self.encoder_outputs, self.encoder_final_state = tf.nn.dynamic_rnn(
+                        cells,
+                        self.encoder_emb_inp,
+                        sequence_length=self.encoder_input_lengths,
+                        dtype=tf.float32,
+                        time_major=False)
+
+            elif Config.model.encoder_type == "bi":
+                cells_fw = self._build_rnn_cells(Config.model.num_units,is_list=True)
+                cells_bw = self._build_rnn_cells(Config.model.num_units,is_list=True)
+                
+                outputs, output_state_fw, output_state_bw = tf.contrib.rnn.stack_bidirectional_dynamic_rnn(
+                        cells_fw,
+                        cells_bw,
+                        self.encoder_emb_inp,
+                        initial_states_fw=None,
+                        initial_states_bw=None,
+                        sequence_length=self.encoder_input_lengths,
+                        dtype=tf.float32)
+
+                if Config.model.cell_type == "LSTM":
+                    encoder_final_state_c = tf.concat((output_state_fw[-1].c,output_state_bw[-1].c),1)
+                    encoder_final_state_h = tf.concat((output_state_fw[-1].h,output_state_bw[-1].h),1)
+                    encoder_final_state = tf.contrib.rnn.LSTMStateTuple(c = encoder_final_state_c, h = encoder_final_state_h)
+                else:
+                    encoder_final_state = tf.concat((output_state_fw[-1],output_state_bw[-1]),1)
+
+                self.encoder_outputs = outputs
+                self.encoder_final_state = encoder_final_state
+            
 
             beam_width = Config.predict.get('beam_width', 0)
             if self.mode == tf.estimator.ModeKeys.PREDICT and beam_width > 0 :
@@ -118,7 +143,12 @@ class Seq2Seq:
                     num_units=Config.model.num_units, memory=self.encoder_outputs,
                     memory_sequence_length=self.encoder_input_lengths)
 
-                cells = self._build_rnn_cells()
+                if Config.model.encoder_type == "uni":
+                    cells = self._build_rnn_cells(Config.model.num_units)
+                    attention_layer_size = Config.model.num_units
+                elif Config.model.encoder_type == "bi":
+                    cells = self._build_rnn_cells(Config.model.num_units*2)
+                    attention_layer_size = Config.model.num_units*2
 
                 beam_width = Config.predict.get('beam_width', 0)
                 alignment_history = (self.mode == tf.estimator.ModeKeys.PREDICT and
@@ -127,7 +157,7 @@ class Seq2Seq:
                 attn_cell = tf.contrib.seq2seq.AttentionWrapper(
                     cells,
                     attention_mechanism,
-                    attention_layer_size=Config.model.num_units,
+                    attention_layer_size=attention_layer_size,
                     alignment_history=alignment_history,
                     name="attention")
 
@@ -216,33 +246,36 @@ class Seq2Seq:
         if self.mode != tf.estimator.ModeKeys.PREDICT:
             self.decoder_train_pred = tf.argmax(self.decoder_train_logits[0], axis=1, name='train/pred_0')
 
-    def _build_rnn_cells(self):
+    def _build_rnn_cells(self, num_units, is_list=False):
         stacked_rnn = []
-
         for _ in range(Config.model.num_layers):
-            single_cell = self._single_cell(Config.model.cell_type, Config.model.dropout)
+            single_cell = self._single_cell(Config.model.cell_type, Config.model.dropout,num_units)
             stacked_rnn.append(single_cell)
 
-        return tf.nn.rnn_cell.MultiRNNCell(
-                cells=stacked_rnn,
-                state_is_tuple=True)
+        if(is_list):
+            return stacked_rnn
+        else:
+            return tf.nn.rnn_cell.MultiRNNCell(
+                    cells=stacked_rnn,
+                    state_is_tuple=True)
+        
 
-    def _single_cell(self, cell_type, dropout):
+    def _single_cell(self, cell_type, dropout, num_units):
         if cell_type == "GRU":
             single_cell = tf.contrib.rnn.GRUCell(
-                Config.model.num_units)
+                num_units)
         elif cell_type == "LSTM":
             single_cell = tf.contrib.rnn.BasicLSTMCell(
-                Config.model.num_units,
+                num_units,
                 forget_bias=1.0)
         elif cell_type == "LAYER_NORM_LSTM":
             single_cell = tf.contrib.rnn.LayerNormBasicLSTMCell(
-                Config.model.num_units,
+                num_units,
                 forget_bias=1.0,
                 layer_norm=True)
         elif cell_type == "NAS":
             single_cell = tf.contrib.rnn.LayerNormBasicLSTMCell(
-                Config.model.num_units)
+                num_units)
         else:
             raise ValueError(f"Unknown rnn cell type. {cell_type}")
 

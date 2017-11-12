@@ -19,6 +19,7 @@ model:
   embed_share: false
   cell_type: LSTM
   dropout: 0.2
+  encoder_type: bi
 
 train:
   batch_size: 2
@@ -26,10 +27,10 @@ train:
   train_steps: 20000
   model_dir: 'logs/check_tiny'
   save_every: 1000
-  learning_rate: 0.001
   loss_hook_n_iter: 1
   check_hook_n_iter: 10
   min_eval_frequency: 10
+  
 
 predict:
   beam_width: 5
