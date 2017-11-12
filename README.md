@@ -14,22 +14,34 @@ TensorFLow Sequence-to-Sequence Models for Conversation
 	- [Estimator](https://www.tensorflow.org/api_docs/python/tf/estimator/Estimator)
 	- [Experiment](https://www.tensorflow.org/api_docs/python/tf/contrib/learn/Experiment)
 	- [Dataset](https://www.tensorflow.org/api_docs/python/tf/contrib/data/Dataset)
+- Encoder
+	- Unidirectional RNN
+	- Stack Bidirectional RNN
 - Attention
-- BeamSearchDecoder
+	- BahdanauAttention
+- Decoder
+	- GreedyEmbeddingHelper
+	- BeamSearchDecoder
 
 
 ## Todo
 
 - need to preprocessing data.
-- train with other dataset.
+- train with other dataset. ([Twitter chat_corpus](https://github.com/Marsan-Ma/chat_corpus))
+- add [LuongAttention](https://www.tensorflow.org/api_docs/python/tf/contrib/seq2seq/LuongAttention) and parameter (norm and scale)
 - make dataset Korean dialog corpus like [Cornell_Movie-Dialogs_Corpus](https://www.cs.cornell.edu/~cristian/Cornell_Movie-Dialogs_Corpus.html)
-- Incorporating Context Challenge
-	-  [Building End-To-End Dialogue Systems
-Using Generative Hierarchical Neural Network Models](https://arxiv.org/pdf/1507.04808.pdf)
-- Coherent Personality Challenge
-	- [A Persona-Based Neural Conversation Model](https://arxiv.org/abs/1603.06155)
-- Intention and Diversity
-	- [A Diversity-Promoting Objective Function for Neural Conversation Models](https://arxiv.org/abs/1510.03055)
+- Implements CopyNet
+	- [Incorporating Copying Mechanism in Sequence-to-Sequence Learning](https://arxiv.org/abs/1603.06393) by J, Gu 2016.
+- Common Challenge
+	- Incorporating Context
+		- [Building End-To-End Dialogue Systems
+Using Generative Hierarchical Neural Network Models](https://arxiv.org/pdf/1507.04808.pdf) by IV Serban, 2015.
+	- Coherent Personality Challenge
+		- [A Persona-Based Neural Conversation Model](https://arxiv.org/abs/1603.06155) by J Li, 2015.
+	- Intention and Diversity
+		- [A Diversity-Promoting Objective Function for Neural Conversation Models](https://arxiv.org/abs/1510.03055) by J Li, 2015.
+	- Evalutaion Metrics
+		- [How NOT To Evaluate Your Dialogue System: An Empirical Study of Unsupervised Evaluation Metrics for Dialogue Response Generation](https://arxiv.org/abs/1603.08023) by CW Liu, 2016
 
 ## Config
 
@@ -51,13 +63,14 @@ data:
   EOS_ID: 3
 
 model:
-  num_layers: 3
+  num_layers: 4
   num_units: 512
   embed_dim: 256
   embed_share: true (true or false)
   cell_type: GRU  (LSTM, GRU, LAYER_NORM_LSTM, NAS)
   beam_width: 0  (0: GreedyEmbeddingHelper)
   dropout: 0.2
+  encoder_type: bi  (uni / bi)
 
 train:
   batch_size: 32
@@ -70,7 +83,7 @@ train:
   min_eval_frequency: 1000
   
 predict:
-  beam_width: 5
+  beam_width: 5  (0: GreedyEmbeddingHelper, 1>=: BeamSearchDecoder)
   length_penalty_weight: 1.0
 ```
 
@@ -96,6 +109,10 @@ After training, start chatting.
 
 ```python chat.py --config cornell-movie-dialogs```
 
+
+### Tensorboard
+
+```tensorboard --logdir logs```
 
 
 ## Conversation Example
@@ -204,3 +221,4 @@ Currently, my model is very stupid. Most of the words begin with ‘ I'm ... ’
 - [TensorFlow — Sequence to Sequence](https://medium.com/@ilblackdragon/tensorflow-sequence-to-sequence-3d9d2e238084) - Medium Illia Polosukhin
 - [TensorFlow Neural Machine Translation Tutorial](https://github.com/tensorflow/nmt) - Tensorflow
 - [tf-seq2seq](https://github.com/JayParks/tf-seq2seq) by JayParks
+- [Deep Learning for Chatbots, Part 1 – Introduction](http://www.wildml.com/2016/04/deep-learning-for-chatbots-part-1-introduction/)
