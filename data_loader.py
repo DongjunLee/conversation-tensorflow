@@ -40,13 +40,34 @@ def get_convos():
     return convos
 
 
-def question_answers(id2line, convos):
+def cornell_question_answers(id2line, convos):
     """ Divide the dataset into two sets: questions and answers. """
     questions, answers = [], []
     for convo in convos:
         for index, line in enumerate(convo[:-1]):
             questions.append(id2line[convo[index]])
             answers.append(id2line[convo[index + 1]])
+    assert len(questions) == len(answers)
+    return questions, answers
+
+
+def twitter_question_answers():
+    """ Divide the dataset into two sets: questions and answers. """
+    file_path = os.path.join(Config.data.base_path, Config.data.line_fname)
+
+    twitter_corpus = []
+    with open(file_path, 'rb') as f:
+        for line in f.readlines():
+            line = line.decode('utf-8')
+
+            if line[-1] == '\n':
+                twitter_corpus.append(line[:-1])
+            else:
+                twitter_corpus.append(line)
+
+    questions = twitter_corpus[::2] # even is question
+    answers = twitter_corpus[1::2] # odd is answer
+
     assert len(questions) == len(answers)
     return questions, answers
 
@@ -175,11 +196,20 @@ def token2id(data, mode):
 
 def prepare_raw_data():
     print('Preparing raw data into train set and test set ...')
-    id2line = get_lines()
-    convos = get_convos()
-    questions, answers = question_answers(id2line, convos)
-    prepare_dataset(questions, answers)
 
+    data_type = Config.data.get('type', 'cornell-movie')
+    if data_type == "cornell-movie":
+        id2line = get_lines()
+        convos = get_convos()
+        questions, answers = cornell_question_answers(id2line, convos)
+    elif data_type == "twitter":
+        questions, answers = twitter_question_answers()
+    elif data_type == "all":
+        pass
+    else:
+        raise ValueError(f"Unknown data_type, {data_type}")
+
+    prepare_dataset(questions, answers)
 
 def process_data():
     print('Preparing data to be model-ready ...')
