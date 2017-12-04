@@ -223,3 +223,4 @@ Currently, my model is very stupid. Most of the words begin with ‘ I'm ... ’
 - [TensorFlow Neural Machine Translation Tutorial](https://github.com/tensorflow/nmt) - Tensorflow
 - [tf-seq2seq](https://github.com/JayParks/tf-seq2seq) by JayParks
 - [Deep Learning for Chatbots, Part 1 – Introduction](http://www.wildml.com/2016/04/deep-learning-for-chatbots-part-1-introduction/)
+- [Neural Text Generation: A Practical Guide](https://arxiv.org/abs/1711.09534) (2017) by Ziang Xie
