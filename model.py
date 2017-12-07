@@ -59,6 +59,8 @@ class Seq2Seq:
     def build_graph(self):
         self._build_embed()
         self._build_encoder()
+        if Config.model.session_level_encoder:
+            self._build_session_level_encoder()
         self._build_decoder()
 
         if self.mode != tf.estimator.ModeKeys.PREDICT:
@@ -105,6 +107,44 @@ class Seq2Seq:
             if self.mode == tf.estimator.ModeKeys.PREDICT and beam_width > 0:
                 self.encoder_outputs = tf.contrib.seq2seq.tile_batch(self.encoder_outputs, beam_width)
                 self.encoder_input_lengths = tf.contrib.seq2seq.tile_batch(self.encoder_input_lengths, beam_width)
+
+    def _build_session_level_encoder(self):
+
+        if Config.model.num_layers > 1:
+            if Config.model.cell_type == "LSTM":
+                if Config.model.encoder_type == "bi":
+                    session_level_encoder_input = tf.stack(self.encoder_final_state)
+                else:
+                    session_level_encoder_input = tf.stack(self.encoder_final_state[-1])
+            else:
+                if Config.model.encoder_type == "bi":
+                    session_level_encoder_input = tf.stack([self.encoder_final_state])
+                else:
+                    session_level_encoder_input = tf.stack([self.encoder_final_state[-1]])
+        else:
+            if Config.model.cell_type == "LSTM":
+                if Config.model.encoder_type == "bi":
+                    session_level_encoder_input = tf.stack(self.encoder_final_state)
+                else:
+                    session_level_encoder_input = tf.stack(self.encoder_final_state[0])
+            else:
+                if Config.model.encoder_type == "bi":
+                    session_level_encoder_input = tf.stack([self.encoder_final_state])
+                else:
+                    session_level_encoder_input = tf.stack(self.encoder_final_state)
+
+        with tf.variable_scope("session_level_encoder"):
+
+            if Config.model.cell_type == "LSTM":
+                session_level_encoder_cell = self._single_cell("LSTM", Config.model.dropout,Config.model.num_units)
+            else:
+                session_level_encoder_cell = self._single_cell("GRU", Config.model.dropout,Config.model.num_units)
+
+            session_level_encoder_outputs, session_level_encoder_final_state = tf.nn.dynamic_rnn(
+                    session_level_encoder_cell, session_level_encoder_input,
+                    dtype=tf.float32)
+
+            self.encoder_final_state = tf.unstack(session_level_encoder_outputs)[0]
 
     def _build_unidirectional_rnn(self):
         cells = self._build_rnn_cells(Config.model.num_units)
@@ -202,7 +242,7 @@ class Seq2Seq:
                     attention_mechanism,
                     attention_layer_size=attention_layer_size,
                     alignment_history=alignment_history,
-                    name="attention")
+                    name="attention") 
 
                 out_cell = tf.contrib.rnn.OutputProjectionWrapper(
                     attn_cell, Config.data.vocab_size)
