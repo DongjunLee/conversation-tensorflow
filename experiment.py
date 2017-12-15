@@ -4,16 +4,16 @@ import tensorflow as tf
 
 import data_loader
 import dataset
-from model import Seq2Seq
+from model import Conversation
 import hook
 
 
 
 def experiment_fn(run_config, params):
 
-    seq2seq = Seq2Seq()
+    conversation = Conversation()
     estimator = tf.estimator.Estimator(
-            model_fn=seq2seq.model_fn,
+            model_fn=conversation.model_fn,
             model_dir=Config.train.model_dir,
             params=params,
             config=run_config)

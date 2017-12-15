@@ -6,9 +6,10 @@ import tensorflow as tf
 from tensorflow.contrib import layers
 from tensorflow.python.layers import core as layers_core
 
+from seq2seq.encoder import Encoder
 
 
-class Seq2Seq:
+class Conversation:
 
     def __init__(self):
         pass
@@ -89,52 +90,21 @@ class Seq2Seq:
 
     def _build_encoder(self):
         with tf.variable_scope('encoder'):
-            if Config.model.encoder_type == "uni":
-                self.encoder_outputs, self.encoder_final_state = self._build_unidirectional_rnn()
-            elif Config.model.encoder_type == "bi":
-                num_bi_layers = int(Config.model.num_layers / 2)
-                if num_bi_layers == 0:
-                    num_bi_layers = 1
-                Config.model.num_layers = num_bi_layers
+            encoder = Encoder(
+                    encoder_type=Config.model.encoder_type,
+                    num_layers=Config.model.num_layers,
+                    cell_type=Config.model.cell_type,
+                    num_units=Config.model.num_units,
+                    dropout=Config.model.dropout)
 
-                self.encoder_outputs, self.encoder_final_state = self._build_bidirectional_rnn()
-            else:
-                raise ValueError(f"Unknown encoder_type {Config.model.encoder_type}")
+            self.encoder_outputs, self.encoder_final_state = encoder.build(
+                    input_vector=self.encoder_emb_inp,
+                    sequence_length=self.encoder_input_lengths)
 
             beam_width = Config.predict.get('beam_width', 0)
             if self.mode == tf.estimator.ModeKeys.PREDICT and beam_width > 0:
                 self.encoder_outputs = tf.contrib.seq2seq.tile_batch(self.encoder_outputs, beam_width)
                 self.encoder_input_lengths = tf.contrib.seq2seq.tile_batch(self.encoder_input_lengths, beam_width)
-
-    def _build_unidirectional_rnn(self):
-        cells = self._build_rnn_cells(Config.model.num_units)
-        return tf.nn.dynamic_rnn(
-                cells,
-                self.encoder_emb_inp,
-                sequence_length=self.encoder_input_lengths,
-                dtype=tf.float32,
-                time_major=False,
-                swap_memory=True)
-
-    def _build_bidirectional_rnn(self):
-        cells_fw = self._build_rnn_cells(Config.model.num_units, is_list=True)
-        cells_bw = self._build_rnn_cells(Config.model.num_units, is_list=True)
-
-        outputs, output_state_fw, output_state_bw = tf.contrib.rnn.stack_bidirectional_dynamic_rnn(
-                cells_fw,
-                cells_bw,
-                self.encoder_emb_inp,
-                sequence_length=self.encoder_input_lengths,
-                dtype=tf.float32)
-
-        if Config.model.cell_type == "LSTM":
-            encoder_final_state_c = tf.concat((output_state_fw[-1].c, output_state_bw[-1].c), axis=1)
-            encoder_final_state_h = tf.concat((output_state_fw[-1].h, output_state_bw[-1].h), axis=1)
-            encoder_final_state = tf.contrib.rnn.LSTMStateTuple(c=encoder_final_state_c, h=encoder_final_state_h)
-        else:
-            encoder_final_state = tf.concat((output_state_fw[-1], output_state_bw[-1]), axis=1)
-
-        return outputs, encoder_final_state
 
     def _build_projection(self):
         with tf.variable_scope("decoder/output_projection"):
@@ -185,10 +155,10 @@ class Seq2Seq:
             with tf.variable_scope(scope):
                 attention_mechanism = self._create_attention_mechanism()
 
-                if Config.model.encoder_type == "uni":
+                if Config.model.encoder_type == "UNI":
                     cells = self._build_rnn_cells(Config.model.num_units)
                     attention_layer_size = Config.model.num_units
-                elif Config.model.encoder_type == "bi":
+                elif Config.model.encoder_type == "BI":
                     cells = self._build_rnn_cells(Config.model.num_units * 2)
                     attention_layer_size = Config.model.num_units * 2
                 else:
