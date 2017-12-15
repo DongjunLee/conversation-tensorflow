@@ -6,7 +6,9 @@ import tensorflow as tf
 from tensorflow.contrib import layers
 from tensorflow.python.layers import core as layers_core
 
-from seq2seq.encoder import Encoder
+from seq2seq_attention.encoder import Encoder
+from seq2seq_attention.decoder import Decoder
+
 
 
 class Conversation:
@@ -58,6 +60,9 @@ class Conversation:
             self.targets = tf.concat([decoder_input_shift_1, pad_tokens], axis=1)
 
     def build_graph(self):
+        # set beam_width config or default is 0
+        self.beam_width = Config.predict.get('beam_width', 0)
+
         self._build_embed()
         self._build_encoder()
         self._build_decoder()
@@ -101,201 +106,49 @@ class Conversation:
                     input_vector=self.encoder_emb_inp,
                     sequence_length=self.encoder_input_lengths)
 
-            beam_width = Config.predict.get('beam_width', 0)
-            if self.mode == tf.estimator.ModeKeys.PREDICT and beam_width > 0:
-                self.encoder_outputs = tf.contrib.seq2seq.tile_batch(self.encoder_outputs, beam_width)
-                self.encoder_input_lengths = tf.contrib.seq2seq.tile_batch(self.encoder_input_lengths, beam_width)
-
-    def _build_projection(self):
-        with tf.variable_scope("decoder/output_projection"):
-            self.output_layer = layers_core.Dense(
-                Config.data.vocab_size, use_bias=False, name="output_projection")
-
-    def _create_attention_mechanism(self):
-
-        num_units = Config.model.num_units
-        if Config.model.encoder_type == "bi" and "luong" in Config.model.attention_mechanism:
-            num_units *= 2
-        memory = self.encoder_outputs
-
-        if Config.model.attention_mechanism == "bahdanau":
-            attention_mechanism = tf.contrib.seq2seq.BahdanauAttention(
-                    num_units,
-                    memory,
-                    memory_sequence_length=self.encoder_input_lengths)
-
-        elif Config.model.attention_mechanism == "normed_bahdanau":
-            attention_mechanism = tf.contrib.seq2seq.BahdanauAttention(
-                    num_units,
-                    memory,
-                    memory_sequence_length=self.encoder_input_lengths,
-                    normalize=True)
-
-        elif Config.model.attention_mechanism == "luong":
-            attention_mechanism = tf.contrib.seq2seq.LuongAttention(
-                    num_units * 2,
-                    memory,
-                    memory_sequence_length=self.encoder_input_lengths)
-
-        elif Config.model.attention_mechanism == "scaled_luong":
-            attention_mechanism = tf.contrib.seq2seq.LuongAttention(
-                    num_units,
-                    memory,
-                    memory_sequence_length=self.encoder_input_lengths,
-                    scale=True)
-        else:
-            raise ValueError(f"Unknown attention mechanism {Config.model.attention_mechanism}")
-
-        return attention_mechanism
+            if self.mode == tf.estimator.ModeKeys.PREDICT and self.beam_width > 0:
+                self.encoder_outputs = tf.contrib.seq2seq.tile_batch(
+                        self.encoder_outputs, self.beam_width)
+                self.encoder_input_lengths = tf.contrib.seq2seq.tile_batch(
+                        self.encoder_input_lengths, self.beam_width)
 
     def _build_decoder(self):
 
-        def decode(helper=None, scope="decode"):
-
-            with tf.variable_scope(scope):
-                attention_mechanism = self._create_attention_mechanism()
-
-                if Config.model.encoder_type == "UNI":
-                    cells = self._build_rnn_cells(Config.model.num_units)
-                    attention_layer_size = Config.model.num_units
-                elif Config.model.encoder_type == "BI":
-                    cells = self._build_rnn_cells(Config.model.num_units * 2)
-                    attention_layer_size = Config.model.num_units * 2
-                else:
-                    raise ValueError(f"Unknown encoder_type {Config.model.encoder_type}")
-
-                beam_width = Config.predict.get('beam_width', 0)
-                alignment_history = (self.mode == tf.estimator.ModeKeys.PREDICT and beam_width == 0)
-
-                attn_cell = tf.contrib.seq2seq.AttentionWrapper(
-                    cells,
-                    attention_mechanism,
-                    attention_layer_size=attention_layer_size,
-                    alignment_history=alignment_history,
-                    name="attention")
-
-                out_cell = tf.contrib.rnn.OutputProjectionWrapper(
-                    attn_cell, Config.data.vocab_size)
-
-                if self.mode == tf.estimator.ModeKeys.PREDICT:
-
-                    maximum_iterations = tf.round(tf.reduce_max(self.encoder_input_lengths) * 2)
-
-                    if helper is None:
-                        decoder_start_state = tf.contrib.seq2seq.tile_batch(self.encoder_final_state, beam_width)
-                        decoder_initial_state = out_cell.zero_state(Config.train.batch_size * beam_width, self.dtype)
-                        decoder_initial_state.clone(cell_state=decoder_start_state)
-
-                        decoder = tf.contrib.seq2seq.BeamSearchDecoder(
-                            cell=out_cell,
-                            embedding=self.embedding_decoder,
-                            start_tokens=tf.fill([Config.train.batch_size], Config.data.START_ID),
-                            end_token=Config.data.EOS_ID,
-                            initial_state=(decoder_initial_state),
-                            beam_width=Config.predict.beam_width,
-                            length_penalty_weight=Config.predict.length_penalty_weight)
-
-                        outputs = tf.contrib.seq2seq.dynamic_decode(
-                            decoder=decoder,
-                            output_time_major=False,
-                            impute_finished=False,
-                            maximum_iterations=maximum_iterations)
-
-                    else:
-                        decoder_initial_state = out_cell.zero_state(Config.train.batch_size, self.dtype)
-                        decoder_initial_state.clone(cell_state=self.encoder_final_state)
-
-                        decoder = tf.contrib.seq2seq.BasicDecoder(
-                            cell=out_cell,
-                            helper=helper,
-                            initial_state=(decoder_initial_state))
-
-                        outputs = tf.contrib.seq2seq.dynamic_decode(
-                            decoder=decoder,
-                            output_time_major=False,
-                            impute_finished=True,
-                            maximum_iterations=maximum_iterations)
-
-                else:
-                    decoder_initial_state = out_cell.zero_state(Config.train.batch_size, self.dtype)
-                    decoder_initial_state.clone(cell_state=self.encoder_final_state)
-                    decoder = tf.contrib.seq2seq.BasicDecoder(
-                        cell=out_cell,
-                        helper=helper,
-                        initial_state=(decoder_initial_state))
-
-                    outputs = tf.contrib.seq2seq.dynamic_decode(
-                        decoder=decoder,
-                        output_time_major=False,
-                        swap_memory=True)
-
-                return outputs[0]
-
         with tf.variable_scope('decoder'):
 
+            decoder = Decoder(
+                        cell_type=Config.model.cell_type,
+                        dropout=Config.model.dropout,
+                        encoder_type=Config.model.encoder_type,
+                        num_layers=Config.model.num_layers,
+                        num_units=Config.model.num_units,
+                        mode=self.mode,
+                        dtype=self.dtype)
+
+            decoder.set_attention_then_project(
+                        attention_mechanism=Config.model.attention_mechanism,
+                        beam_width=self.beam_width,
+                        memory=self.encoder_outputs,
+                        memory_sequence_length=self.encoder_input_lengths,
+                        vocab_size=Config.data.vocab_size)
+            decoder.set_initial_state(Config.train.batch_size, self.encoder_final_state)
+
+            decoder_outputs = decoder.build(
+                                inputs=self.decoder_emb_inp,
+                                sequence_length=self.decoder_input_lengths,
+                                embedding=self.embedding_decoder,
+                                start_tokens=tf.fill([Config.train.batch_size], Config.data.START_ID),
+                                end_token=Config.data.EOS_ID,
+                                length_penalty_weight=Config.predict.length_penalty_weight)
+
             if self.mode == tf.estimator.ModeKeys.PREDICT:
-
-                beam_width = Config.predict.get('beam_width', 0)
-                if beam_width > 0:
-                    self.decoder_pred_outputs = decode()
-                    self.prediction = self.decoder_pred_outputs.predicted_ids
+                if self.beam_width > 0:
+                    self.prediction = decoder_outputs.predicted_ids
                 else:
-                    self.pred_helper = tf.contrib.seq2seq.GreedyEmbeddingHelper(
-                        embedding=self.embedding_decoder,
-                        start_tokens=tf.fill([Config.train.batch_size], Config.data.START_ID),
-                        end_token=Config.data.EOS_ID)
-
-                    self.decoder_pred_outputs = decode(helper=self.pred_helper)
-                    self.prediction = self.decoder_pred_outputs.sample_id
-
+                    self.prediction = decoder_outputs.sample_id
             else:
-                self.train_helper = tf.contrib.seq2seq.TrainingHelper(
-                    inputs=self.decoder_emb_inp,
-                    sequence_length=self.decoder_input_lengths)
-
-                self.decoder_train_outputs = decode(self.train_helper, 'decode')
-                self.decoder_train_logits = self.decoder_train_outputs.rnn_output
-
-        if self.mode != tf.estimator.ModeKeys.PREDICT:
-            self.decoder_train_pred = tf.argmax(self.decoder_train_logits[0], axis=1, name='train/pred_0')
-
-    def _build_rnn_cells(self, num_units, is_list=False):
-        stacked_rnn = []
-        for _ in range(Config.model.num_layers):
-            single_cell = self._single_cell(Config.model.cell_type, Config.model.dropout,num_units)
-            stacked_rnn.append(single_cell)
-
-        if is_list:
-            return stacked_rnn
-        else:
-            return tf.nn.rnn_cell.MultiRNNCell(
-                    cells=stacked_rnn,
-                    state_is_tuple=True)
-
-    def _single_cell(self, cell_type, dropout, num_units):
-        if cell_type == "GRU":
-            single_cell = tf.contrib.rnn.GRUCell(
-                num_units)
-        elif cell_type == "LSTM":
-            single_cell = tf.contrib.rnn.BasicLSTMCell(
-                num_units,
-                forget_bias=1.0)
-        elif cell_type == "LAYER_NORM_LSTM":
-            single_cell = tf.contrib.rnn.LayerNormBasicLSTMCell(
-                num_units,
-                forget_bias=1.0,
-                layer_norm=True)
-        elif cell_type == "NAS":
-            single_cell = tf.contrib.rnn.LayerNormBasicLSTMCell(
-                num_units)
-        else:
-            raise ValueError(f"Unknown rnn cell type. {cell_type}")
-
-        if dropout > 0.0:
-            single_cell = tf.contrib.rnn.DropoutWrapper(
-                cell=single_cell, input_keep_prob=(1.0 - dropout))
-
-        return single_cell
+                self.decoder_train_logits = decoder_outputs.rnn_output
+        self.decoder_train_pred = tf.argmax(self.decoder_train_logits[0], axis=1, name='train/pred_0')
 
     def _build_loss(self):
         pad_num = Config.data.max_seq_length - tf.shape(self.decoder_train_logits)[1]

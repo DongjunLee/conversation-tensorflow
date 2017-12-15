@@ -17,7 +17,7 @@ model:
   num_units: 16
   embed_dim: 16
   embed_share: false
-  cell_type: LSTM
+  cell_type: lstm
   dropout: 0.2
   encoder_type: bi
   attention_mechanism: bahdanau

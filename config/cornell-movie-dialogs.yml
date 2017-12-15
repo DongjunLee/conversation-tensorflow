@@ -17,7 +17,7 @@ model:
   num_units: 512
   embed_dim: 256
   embed_share: true
-  cell_type: GRU
+  cell_type: gru
   dropout: 0.2
   encoder_type: bi
   attention_mechanism: normed_bahdanau

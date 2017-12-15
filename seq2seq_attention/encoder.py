@@ -13,24 +13,24 @@ class Encoder:
     The 'Encoder' usually encode the sequential input vector.
     """
 
-    UNI_ENCODER_TYPE = "UNI"
-    BI_ENCODER_TYPE = "BI"
+    UNI_ENCODER_TYPE = "uni"
+    BI_ENCODER_TYPE = "bi"
 
-    RNN_GRU_CELL = "GRU"
-    RNN_LSTM_CELL = "LSTM"
-    RNN_LAYER_NORM_LSTM_CELL = "LAYER_NORM_LSTM"
-    RNN_NAS_CELL = "NAS"
+    RNN_GRU_CELL = "gru"
+    RNN_LSTM_CELL = "lstm"
+    RNN_LAYER_NORM_LSTM_CELL = "layer_norm_lstm"
+    RNN_NAS_CELL = "nas"
 
-    def __init__(self, encoder_type="UNI", num_layers=4,
+    def __init__(self, encoder_type="uni", num_layers=4,
                  cell_type="GRU", num_units=512, dropout=0.8,
                  dtype=tf.float32):
         """Contructs an 'Encoder' instance.
         * Args:
-            encoder_type: rnn encoder_type (UNI, BI)
+            encoder_type: rnn encoder_type (uni, bi)
             num_layers: number of RNN cell composed sequentially of multiple simple cells.
             input_vector: RNN Input vectors.
             sequence_length: batch element's sequence length
-            cell_type: RNN cell types (LSTM, GRU, LAYER_NORM_LSTM, NAS)
+            cell_type: RNN cell types (lstm, gru, layer_norm_lstm, nas)
             num_units: the number of units in cell
             dropout: set prob operator adding dropout to inputs of the given cell.
             dtype: the dtype of the input
