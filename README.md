@@ -1,6 +1,8 @@
 # A Neural Conversational Model
 
-TensorFLow Sequence-to-Sequence Models for Conversation
+TensorFlow implementation of Conversation Models.
+
+- ****`seq2seq_attention`**** : Seq2Seq model with attentional decoder based on '[Neural machine translation by jointly learning to align and translate](https://arxiv.org/pdf/1409.0473.pdf)' (2015) by Dzmitry Bahdanau
 
 ## Requirements
 
@@ -67,7 +69,7 @@ model:
   num_units: 512
   embed_dim: 256
   embed_share: true (true or false)
-  cell_type: GRU  (LSTM, GRU, LAYER_NORM_LSTM, NAS)
+  cell_type: gru  (lstm, gru, layer_norm_lstm, nas)
   beam_width: 0  (0: GreedyEmbeddingHelper)
   dropout: 0.2
   encoder_type: bi  (uni / bi)
@@ -102,7 +104,7 @@ First, check if the model is valid.
 Then, download [Cornell_Movie-Dialogs_Corpus](https://www.cs.cornell.edu/~cristian/Cornell_Movie-Dialogs_Corpus.html) and train it.
 
 ```
-sh prepare_Cornell_Movie-Dialogs_Corpus
+sh scripts/prepare_Cornell_Movie-Dialogs_Corpus
 python main.py --config cornell-movie-dialogs --mode train_and_evaluate
 ```
 
@@ -219,8 +221,6 @@ Currently, my model is very stupid. Most of the words begin with ‘ I'm ... ’
 ## Reference
 
 - [stanford-tensorflow-tutorials](https://github.com/chiphuyen/stanford-tensorflow-tutorials/tree/master/assignments/chatbot) by Chip Huyen
-- [TensorFlow — Sequence to Sequence](https://medium.com/@ilblackdragon/tensorflow-sequence-to-sequence-3d9d2e238084) - Medium Illia Polosukhin
 - [TensorFlow Neural Machine Translation Tutorial](https://github.com/tensorflow/nmt) - Tensorflow
-- [tf-seq2seq](https://github.com/JayParks/tf-seq2seq) by JayParks
 - [Deep Learning for Chatbots, Part 1 – Introduction](http://www.wildml.com/2016/04/deep-learning-for-chatbots-part-1-introduction/)
 - [Neural Text Generation: A Practical Guide](https://arxiv.org/abs/1711.09534) (2017) by Ziang Xie
