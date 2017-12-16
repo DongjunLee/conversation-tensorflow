@@ -26,6 +26,7 @@ def experiment_fn(run_config, params):
     Config.data.vocab_size = len(vocab)
 
     train_X, test_X, train_y, test_y = data_loader.make_train_and_test_set()
+    Config.eval.batch_size = len(test_y)
 
     train_input_fn, train_input_hook = dataset.get_train_inputs(train_X, train_y)
     test_input_fn, test_input_hook = dataset.get_test_inputs(test_X, test_y)

@@ -32,6 +32,8 @@ train:
   check_hook_n_iter: 10
   min_eval_frequency: 10
 
+eval:
+  batch_size: -1
 
 predict:
   beam_width: 5

@@ -93,13 +93,13 @@ class Graph:
                         memory=self.encoder_outputs,
                         memory_sequence_length=self.encoder_input_lengths,
                         vocab_size=Config.data.vocab_size)
-            decoder.set_initial_state(Config.train.batch_size, self.encoder_final_state)
+            decoder.set_initial_state(Config.model.batch_size, self.encoder_final_state)
 
             decoder_outputs = decoder.build(
                                 inputs=self.decoder_emb_inp,
                                 sequence_length=self.decoder_input_lengths,
                                 embedding=self.embedding_decoder,
-                                start_tokens=tf.fill([Config.train.batch_size], Config.data.START_ID),
+                                start_tokens=tf.fill([Config.model.batch_size], Config.data.START_ID),
                                 end_token=Config.data.EOS_ID,
                                 length_penalty_weight=Config.predict.length_penalty_weight)
 
@@ -111,13 +111,13 @@ class Graph:
             else:
                 self.decoder_train_logits = decoder_outputs.rnn_output
 
-        self.train_predictions = tf.argmax(self.decoder_train_logits, axis=2)
-        tf.identity(self.train_predictions[0], name='train/pred_0')
+        # for print trainig data
+        tf.identity(tf.argmax(self.decoder_train_logits[0], axis=1), name='train/pred_0')
 
         # make logits
         pad_num = Config.data.max_seq_length - tf.shape(self.decoder_train_logits)[1]
         zero_padding = tf.zeros(
-                [Config.train.batch_size, pad_num, Config.data.vocab_size],
+                [Config.model.batch_size, pad_num, Config.data.vocab_size],
                 dtype=self.dtype)
 
         self.logits = tf.concat([self.decoder_train_logits, zero_padding], axis=1)
@@ -125,3 +125,6 @@ class Graph:
             lengths=self.decoder_input_lengths,
             maxlen=Config.data.max_seq_length,
             dtype=self.dtype, name='masks')
+
+        # make predictions
+        self.train_predictions = tf.argmax(self.logits, axis=2)

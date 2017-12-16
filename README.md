@@ -84,7 +84,10 @@ train:
   loss_hook_n_iter: 1000
   check_hook_n_iter: 1000
   min_eval_frequency: 1000
-  
+
+eval:
+  batch_size: -1 (all test dataset)
+
 predict:
   beam_width: 5  (0: GreedyEmbeddingHelper, 1>=: BeamSearchDecoder)
   length_penalty_weight: 1.0
@@ -215,7 +218,7 @@ what ? <\s>
 it ' s a real competition
 ```
 
-Currently, my model is very stupid. Most of the words begin with ‘ I'm ... ’. 
+Currently, my model is very stupid. Most of the words begin with ‘ I'm ... ’.
 
 
 ## Reference

@@ -82,7 +82,7 @@ def get_test_inputs(X, y):
 
             dataset = dataset.repeat(None)  # Infinite iterations
             dataset = dataset.shuffle(buffer_size=10000)
-            dataset = dataset.batch(Config.train.batch_size)
+            dataset = dataset.batch(Config.eval.batch_size)
 
             iterator = dataset.make_initializable_iterator()
             next_X, next_y = iterator.get_next()

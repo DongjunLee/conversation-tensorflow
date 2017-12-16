@@ -17,12 +17,13 @@ class Conversation:
 
     def model_fn(self, mode, features, labels, params):
         self.dtype = tf.float32
-
         self.mode = mode
-        self.params = params
 
+        self._set_batch_size(mode)
         self._init_placeholder(features, labels)
         self.build_graph()
+
+        eval_metric = self.create_eval_metric()
 
         if self.mode == tf.estimator.ModeKeys.PREDICT:
             return tf.estimator.EstimatorSpec(
@@ -33,8 +34,15 @@ class Conversation:
                 mode=mode,
                 predictions=self.train_predictions,
                 loss=self.loss,
-                train_op=self.train_op
+                train_op=self.train_op,
+                eval_metric_ops=eval_metric
             )
+
+    def _set_batch_size(self, mode):
+        if mode == tf.estimator.ModeKeys.EVAL:
+            Config.model.batch_size = Config.eval.batch_size
+        else:
+            Config.model.batch_size = Config.train.batch_size
 
     def _init_placeholder(self, features, labels):
         self.encoder_inputs = features
@@ -45,8 +53,8 @@ class Conversation:
 
             self.decoder_inputs = labels
             decoder_input_shift_1 = tf.slice(self.decoder_inputs, [0, 1],
-                    [Config.train.batch_size, Config.data.max_seq_length-1])
-            pad_tokens = tf.zeros([Config.train.batch_size, 1], dtype=tf.int32)
+                    [Config.model.batch_size, Config.data.max_seq_length-1])
+            pad_tokens = tf.zeros([Config.model.batch_size, 1], dtype=tf.int32)
 
             # make target (right shift 1 from decoder_inputs)
             self.targets = tf.concat([decoder_input_shift_1, pad_tokens], axis=1)
@@ -78,3 +86,9 @@ class Conversation:
             learning_rate=Config.train.learning_rate,
             summaries=['loss', 'learning_rate'],
             name="train_op")
+
+    def create_eval_metric(self):
+        # TODO : add BLEU
+        return {
+            "accuracy": tf.metrics.accuracy(self.targets, self.train_predictions)
+        }
