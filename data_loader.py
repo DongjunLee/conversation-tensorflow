@@ -134,10 +134,12 @@ def basic_tokenizer(line, normalize_digits=True):
 
 
 def build_vocab(in_fname, out_fname, normalize_digits=True):
+    print("Count each vocab frequency ...")
+
     vocab = {}
     def count_vocab(fname):
         with open(fname, 'rb') as f:
-            for line in f.readlines():
+            for line in tqdm(f.readlines()):
                 line = line.decode('utf-8')
                 for token in tokenizer.tokenize(line):
                     if not token in vocab:
@@ -150,7 +152,10 @@ def build_vocab(in_fname, out_fname, normalize_digits=True):
     count_vocab(in_path)
     count_vocab(out_path)
 
+    print("total vocab size:", len(vocab))
+
     sorted_vocab = sorted(vocab, key=vocab.get, reverse=True)
+    print(sorted_vocab)
 
     dest_path = os.path.join(Config.data.processed_path, 'vocab')
     with open(dest_path, 'wb') as f:
@@ -159,9 +164,10 @@ def build_vocab(in_fname, out_fname, normalize_digits=True):
         f.write(('<s>' + '\n').encode('utf-8'))
         f.write(('<\s>' + '\n').encode('utf-8'))
         index = 4
-        for word in sorted_vocab:
+        for word in tqdm(sorted_vocab):
             if vocab[word] < Config.data.word_threshold:
-                continue
+                break
+
             f.write((word + '\n').encode('utf-8'))
             index += 1
 
@@ -170,6 +176,7 @@ def load_vocab(vocab_fname):
     print("load vocab ...")
     with open(os.path.join(Config.data.processed_path, vocab_fname), 'rb') as f:
         words = f.read().decode('utf-8').splitlines()
+        print("vocab size:", len(words))
     return {words[i]: i for i in range(len(words))}
 
 
@@ -189,7 +196,7 @@ def token2id(data, mode):
     out_file = open(os.path.join(Config.data.processed_path, out_path), 'wb')
 
     lines = in_file.read().decode('utf-8').splitlines()
-    for line in lines:
+    for line in tqdm(lines):
         if mode == 'dec':  # we only care about '<s>' and </s> in decoder
             ids = [vocab['<s>']]
         else:
@@ -359,5 +366,5 @@ if __name__ == '__main__':
 
     Config(args.config)
 
-    prepare_raw_data()
+    # prepare_raw_data()
     process_data()
