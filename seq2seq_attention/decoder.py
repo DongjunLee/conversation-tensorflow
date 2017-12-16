@@ -171,7 +171,6 @@ class Decoder:
                         end_token=end_token)
                 return self._basic_decoder(helper)
         else:
-            print(self.mode, "training helper")
             helper = tf.contrib.seq2seq.TrainingHelper(
                     inputs=inputs,
                     sequence_length=sequence_length)
