@@ -8,7 +8,9 @@ TensorFlow implementation of Conversation Models.
 
 - Python 3.6
 - TensorFlow 1.4
+- nltk
 - hb-config
+- tqdm
 
 ## Features
 
