@@ -111,20 +111,20 @@ class Graph:
             else:
                 self.decoder_train_logits = decoder_outputs.rnn_output
 
+            # make logits
+            pad_num = Config.data.max_seq_length - tf.shape(self.decoder_train_logits)[1]
+            zero_padding = tf.zeros(
+                    [Config.model.batch_size, pad_num, Config.data.vocab_size],
+                    dtype=self.dtype)
+
+            self.logits = tf.concat([self.decoder_train_logits, zero_padding], axis=1)
+            self.weight_masks = tf.sequence_mask(
+                lengths=self.decoder_input_lengths,
+                maxlen=Config.data.max_seq_length,
+                dtype=self.dtype, name='masks')
+
+            # make predictions
+            self.train_predictions = tf.argmax(self.logits, axis=2)
+
         # for print trainig data
         tf.identity(tf.argmax(self.decoder_train_logits[0], axis=1), name='train/pred_0')
-
-        # make logits
-        pad_num = Config.data.max_seq_length - tf.shape(self.decoder_train_logits)[1]
-        zero_padding = tf.zeros(
-                [Config.model.batch_size, pad_num, Config.data.vocab_size],
-                dtype=self.dtype)
-
-        self.logits = tf.concat([self.decoder_train_logits, zero_padding], axis=1)
-        self.weight_masks = tf.sequence_mask(
-            lengths=self.decoder_input_lengths,
-            maxlen=Config.data.max_seq_length,
-            dtype=self.dtype, name='masks')
-
-        # make predictions
-        self.train_predictions = tf.argmax(self.logits, axis=2)

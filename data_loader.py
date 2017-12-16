@@ -6,9 +6,14 @@ import os
 import random
 import re
 
+from nltk.tokenize import TweetTokenizer
 import numpy as np
 from hbconfig import Config
+from tqdm import tqdm
 
+
+
+toknizer = TweetTokenizer()
 
 def get_lines():
     id2line = {}
@@ -84,7 +89,7 @@ def prepare_dataset(questions, answers):
     for filename in filenames:
         files.append(open(os.path.join(Config.data.processed_path, filename), 'wb'))
 
-    for i in range(len(questions)):
+    for i in tqdm(range(len(questions))):
         if i in test_ids:
             files[2].write((questions[i] + "\n").encode('utf-8'))
             files[3].write((answers[i] + '\n').encode('utf-8'))
@@ -130,7 +135,7 @@ def build_vocab(in_fname, out_fname, normalize_digits=True):
         with open(fname, 'rb') as f:
             for line in f.readlines():
                 line = line.decode('utf-8')
-                for token in basic_tokenizer(line):
+                for token in tokenizer.tokenize(line):
                     if not token in vocab:
                         vocab[token] = 0
                     vocab[token] += 1
@@ -165,7 +170,7 @@ def load_vocab(vocab_fname):
 
 
 def sentence2id(vocab, line):
-    return [vocab.get(token, vocab['<unk>']) for token in basic_tokenizer(line)]
+    return [vocab.get(token, vocab['<unk>']) for token in tokenizer.tokenize(line)]
 
 
 def token2id(data, mode):
@@ -205,7 +210,23 @@ def prepare_raw_data():
     elif data_type == "twitter":
         questions, answers = twitter_question_answers()
     elif data_type == "all":
-        pass
+        # cornell-movie
+        Config.data.base_path = "data/cornell_movie_dialogs_corpus/"
+        Config.data.line_fname = "movie_lines.txt"
+        Config.data.conversation_fname = "movie_conversations.txt"
+
+        id2line = get_lines()
+        convos = get_convos()
+        co_questions, co_answers = cornell_question_answers(id2line, convos)
+
+        #twitter
+        Config.data.base_path = "data/"
+        Config.data.line_fname = "twitter_en.txt"
+
+        tw_questions, tw_answers = twitter_question_answers()
+
+        questions = co_questions + tw_questions
+        answers = co_answers + tw_answers
     else:
         raise ValueError(f"Unknown data_type, {data_type}")
 
