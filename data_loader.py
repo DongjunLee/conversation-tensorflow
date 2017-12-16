@@ -90,12 +90,16 @@ def prepare_dataset(questions, answers):
         files.append(open(os.path.join(Config.data.processed_path, filename), 'wb'))
 
     for i in tqdm(range(len(questions))):
+
+        question = questions[i]
+        answer = answers[i]
+
         if i in test_ids:
-            files[2].write((questions[i] + "\n").encode('utf-8'))
-            files[3].write((answers[i] + '\n').encode('utf-8'))
+            files[2].write((question + "\n").encode('utf-8'))
+            files[3].write((answer + '\n').encode('utf-8'))
         else:
-            files[0].write((questions[i] + '\n').encode('utf-8'))
-            files[1].write((answers[i] + '\n').encode('utf-8'))
+            files[0].write((question + '\n').encode('utf-8'))
+            files[1].write((answer + '\n').encode('utf-8'))
 
     for file in files:
         file.close()
@@ -157,7 +161,7 @@ def build_vocab(in_fname, out_fname, normalize_digits=True):
         index = 4
         for word in sorted_vocab:
             if vocab[word] < Config.data.word_threshold:
-                pass
+                continue
             f.write((word + '\n').encode('utf-8'))
             index += 1
 
