@@ -13,7 +13,7 @@ from tqdm import tqdm
 
 
 
-toknizer = TweetTokenizer()
+tokenizer = TweetTokenizer()
 
 def get_lines():
     id2line = {}
