@@ -27,7 +27,7 @@ train:
   learning_rate: 0.001
   train_steps: 20000
   model_dir: 'logs/check_tiny'
-  save_every: 1000
+  save_checkpoints_steps: 1000
   loss_hook_n_iter: 1
   check_hook_n_iter: 10
   min_eval_frequency: 10
