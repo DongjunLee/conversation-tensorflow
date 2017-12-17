@@ -153,9 +153,7 @@ def build_vocab(in_fname, out_fname, normalize_digits=True):
     count_vocab(out_path)
 
     print("total vocab size:", len(vocab))
-
     sorted_vocab = sorted(vocab, key=vocab.get, reverse=True)
-    print(sorted_vocab)
 
     dest_path = os.path.join(Config.data.processed_path, 'vocab')
     with open(dest_path, 'wb') as f:
@@ -254,31 +252,39 @@ def process_data():
     token2id('test', 'dec')
 
 
-def make_train_and_test_set():
+def make_train_and_test_set(shuffle=True):
     print("make Training data and Test data Start....")
 
     train_X, train_y = load_data('train_ids.enc', 'train_ids.dec')
     test_X, test_y = load_data('test_ids.enc', 'test_ids.dec')
 
     if len(train_X) == len(train_y) and len(test_X) == len(test_y):
-        print(f"train data count : {len(train_X)}")
-        print(f"test data count : {len(test_X)}")
-        return train_X, test_X, train_y, test_y
+        pass
     else:
         train_count = min(len(train_X), len(train_y))
         test_count = min(len(test_X), len(test_y))
 
-        print(f"train data count : {train_count}")
-        print(f"test data count : {test_count}")
+        train_X, train_y = train_X[:train_count], train_y[:train_count]
+        test_X, test_y = test_X[:test_count], test_y[:test_count]
 
-        return train_X[:train_count], test_X[:test_count], train_y[:train_count], test_y[:test_count]
+    print(f"train data count : {len(train_X)}")
+    print(f"test data count : {len(test_X)}")
+
+    if shuffle:
+        print("shuffle dataset ...")
+        train_p = np.random.permutation(len(train_y))
+        test_p = np.random.permutation(len(test_y))
+
+        return train_X[train_p], test_X[test_p], train_y[train_p], test_y[test_p]
+    else:
+        return train_X, test_X, train_y, test_y
 
 def load_data(enc_fname, dec_fname):
     enc_input_data = open(os.path.join(Config.data.processed_path, enc_fname), 'r')
     dec_input_data = open(os.path.join(Config.data.processed_path, dec_fname), 'r')
 
     enc_data, dec_data = [], []
-    for e_line, d_line in zip(enc_input_data.readlines(), dec_input_data.readlines()):
+    for e_line, d_line in tqdm(zip(enc_input_data.readlines(), dec_input_data.readlines())):
         e_ids = [int(id_) for id_ in e_line.split()]
         d_ids = [int(id_) for id_ in d_line.split()]
 
@@ -366,5 +372,5 @@ if __name__ == '__main__':
 
     Config(args.config)
 
-    # prepare_raw_data()
+    prepare_raw_data()
     process_data()
