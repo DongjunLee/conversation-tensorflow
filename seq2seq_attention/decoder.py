@@ -153,9 +153,6 @@ class Decoder:
             end_token=None,
             length_penalty_weight=1.0):
 
-        assert inputs is not None
-        assert sequence_length is not None
-
         if self.mode == tf.estimator.ModeKeys.PREDICT:
             assert embedding is not None
             assert start_tokens is not None
@@ -171,6 +168,9 @@ class Decoder:
                         end_token=end_token)
                 return self._basic_decoder(helper)
         else:
+            assert inputs is not None
+            assert sequence_length is not None
+
             helper = tf.contrib.seq2seq.TrainingHelper(
                     inputs=inputs,
                     sequence_length=sequence_length)

@@ -23,8 +23,6 @@ class Conversation:
         self._init_placeholder(features, labels)
         self.build_graph()
 
-        eval_metric = self.create_eval_metric()
-
         if self.mode == tf.estimator.ModeKeys.PREDICT:
             return tf.estimator.EstimatorSpec(
                 mode=mode,
@@ -35,7 +33,7 @@ class Conversation:
                 predictions=self.train_predictions,
                 loss=self.loss,
                 train_op=self.train_op,
-                eval_metric_ops=eval_metric
+                eval_metric_ops=self.create_eval_metric()
             )
 
     def _set_batch_size(self, mode):
@@ -49,7 +47,7 @@ class Conversation:
         if type(features) == dict:
             self.encoder_inputs = features["input_data"]
 
-        if self.mode != tf.estimator.ModeKeys.PREDICT:
+        if self.mode == tf.estimator.ModeKeys.TRAIN:
 
             self.decoder_inputs = labels
             decoder_input_shift_1 = tf.slice(self.decoder_inputs, [0, 1],
@@ -58,12 +56,13 @@ class Conversation:
 
             # make target (right shift 1 from decoder_inputs)
             self.targets = tf.concat([decoder_input_shift_1, pad_tokens], axis=1)
+        else:
+            self.decoder_inputs = None
 
     def build_graph(self):
-        graph = seq2seq_attention.Graph(
-                    encoder_inputs=self.encoder_inputs,
+        graph = seq2seq_attention.Graph(mode=self.mode)
+        graph.build(encoder_inputs=self.encoder_inputs,
                     decoder_inputs=self.decoder_inputs)
-        graph.build(self.mode)
 
         if self.mode == tf.estimator.ModeKeys.PREDICT:
             self.predictions = graph.predictions

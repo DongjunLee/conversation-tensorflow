@@ -8,26 +8,29 @@ from .decoder import Decoder
 
 class Graph:
 
-    def __init__(self,
-            encoder_inputs=None,
-            decoder_inputs=None,
-            dtype=tf.float32):
+    def __init__(self, mode=None, dtype=tf.float32):
+        self.mode = mode
+        self.beam_width = Config.predict.get('beam_width', 0)
+        self.dtype = dtype
 
+    def build(self,
+              encoder_inputs=None,
+              decoder_inputs=None):
+
+        # set inputs variable
         self.encoder_inputs = encoder_inputs
         self.encoder_input_lengths = tf.reduce_sum(
             tf.to_int32(tf.not_equal(self.encoder_inputs, Config.data.PAD_ID)), 1,
             name="encoder_input_lengths")
 
-        self.decoder_inputs = decoder_inputs
-        self.decoder_input_lengths = tf.reduce_sum(
-            tf.to_int32(tf.not_equal(self.decoder_inputs, Config.data.PAD_ID)), 1,
-            name="decoder_input_lengths")
-
-        self.dtype = dtype
-
-    def build(self, mode):
-        self.beam_width = Config.predict.get('beam_width', 0)
-        self.mode = mode
+        if self.mode == tf.estimator.ModeKeys.TRAIN:
+            self.decoder_inputs = decoder_inputs
+            self.decoder_input_lengths = tf.reduce_sum(
+                tf.to_int32(tf.not_equal(self.decoder_inputs, Config.data.PAD_ID)), 1,
+                name="decoder_input_lengths")
+        else:
+            self.decoder_inputs = None
+            self.decoder_input_lengths = None
 
         self._build_embed()
         self._build_encoder()
@@ -51,9 +54,11 @@ class Graph:
             self.encoder_emb_inp = tf.nn.embedding_lookup(
                 self.embedding_encoder, self.encoder_inputs)
 
-            if self.mode != tf.estimator.ModeKeys.PREDICT:
+            if self.mode == tf.estimator.ModeKeys.TRAIN:
                 self.decoder_emb_inp = tf.nn.embedding_lookup(
                     self.embedding_decoder, self.decoder_inputs)
+            else:
+                self.decoder_emb_inp=None
 
     def _build_encoder(self):
         with tf.variable_scope('encoder'):
@@ -68,7 +73,7 @@ class Graph:
                     input_vector=self.encoder_emb_inp,
                     sequence_length=self.encoder_input_lengths)
 
-            if self.mode == tf.estimator.ModeKeys.PREDICT and self.beam_width > 0:
+            if self.mode != tf.estimator.ModeKeys.TRAIN and self.beam_width > 0:
                 self.encoder_outputs = tf.contrib.seq2seq.tile_batch(
                         self.encoder_outputs, self.beam_width)
                 self.encoder_input_lengths = tf.contrib.seq2seq.tile_batch(
@@ -103,28 +108,30 @@ class Graph:
                                 end_token=Config.data.EOS_ID,
                                 length_penalty_weight=Config.predict.length_penalty_weight)
 
-            if self.mode == tf.estimator.ModeKeys.PREDICT:
+            if self.mode == tf.estimator.ModeKeys.TRAIN:
+                self.decoder_train_logits = decoder_outputs.rnn_output
+
+                # make logits
+                pad_num = Config.data.max_seq_length - tf.shape(self.decoder_train_logits)[1]
+                zero_padding = tf.zeros(
+                        [Config.model.batch_size, pad_num, Config.data.vocab_size],
+                        dtype=self.dtype)
+
+                self.logits = tf.concat([self.decoder_train_logits, zero_padding], axis=1)
+                self.weight_masks = tf.sequence_mask(
+                    lengths=self.decoder_input_lengths,
+                    maxlen=Config.data.max_seq_length,
+                    dtype=self.dtype, name='masks')
+
+                # make predictions
+                self.train_predictions = tf.argmax(self.logits, axis=2)
+
+            else:
                 if self.beam_width > 0:
                     self.predictions = decoder_outputs.predicted_ids
                 else:
                     self.predictions = decoder_outputs.sample_id
-            else:
-                self.decoder_train_logits = decoder_outputs.rnn_output
 
-            # make logits
-            pad_num = Config.data.max_seq_length - tf.shape(self.decoder_train_logits)[1]
-            zero_padding = tf.zeros(
-                    [Config.model.batch_size, pad_num, Config.data.vocab_size],
-                    dtype=self.dtype)
-
-            self.logits = tf.concat([self.decoder_train_logits, zero_padding], axis=1)
-            self.weight_masks = tf.sequence_mask(
-                lengths=self.decoder_input_lengths,
-                maxlen=Config.data.max_seq_length,
-                dtype=self.dtype, name='masks')
-
-            # make predictions
-            self.train_predictions = tf.argmax(self.logits, axis=2)
-
-        # for print trainig data
-        tf.identity(tf.argmax(self.decoder_train_logits[0], axis=1), name='train/pred_0')
+        if self.mode == tf.estimator.ModeKeys.TRAIN:
+            # for print trainig data
+            tf.identity(tf.argmax(self.decoder_train_logits[0], axis=1), name='train/pred_0')

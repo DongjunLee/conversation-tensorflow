@@ -9,7 +9,7 @@ import numpy as np
 import tensorflow as tf
 
 import data_loader
-from model import Seq2Seq
+from model import Conversation
 import hook
 
 
@@ -75,9 +75,9 @@ def _make_estimator():
             device_count={'GPU': 0}
         ))
 
-    seq2seq = Seq2Seq()
+    conversation = Conversation()
     return tf.estimator.Estimator(
-            model_fn=seq2seq.model_fn,
+            model_fn=conversation.model_fn,
             model_dir=Config.train.model_dir,
             params=params,
             config=run_config)
