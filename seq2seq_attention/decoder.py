@@ -183,10 +183,18 @@ class Decoder:
             helper=helper,
             initial_state=(self.decoder_initial_state))
 
-        outputs = tf.contrib.seq2seq.dynamic_decode(
-            decoder=decoder,
-            output_time_major=False,
-            swap_memory=True)
+        if self.mode == tf.estimator.ModeKeys.TRAIN:
+            outputs = tf.contrib.seq2seq.dynamic_decode(
+                decoder=decoder,
+                output_time_major=False,
+                swap_memory=True)
+        else:
+            outputs = tf.contrib.seq2seq.dynamic_decode(
+                decoder=decoder,
+                output_time_major=False,
+                impute_finished=True,
+                maximum_iterations=self.maximum_iterations)
+
         return outputs[0]
 
     def _beam_search_decoder(self, embedding, start_tokens, end_token, length_penalty_weight):
