@@ -2,7 +2,23 @@
 
 TensorFlow implementation of Conversation Models.
 
-- ****`seq2seq_attention`**** : Seq2Seq model with attentional decoder based on '[Neural machine translation by jointly learning to align and translate](https://arxiv.org/pdf/1409.0473.pdf)' (2015) by Dzmitry Bahdanau
+1. **Model**
+
+	- `seq2seq_attention` : Seq2Seq model with attentional decoder based on '[Neural machine translation by jointly learning to align and translate](https://arxiv.org/pdf/1409.0473.pdf)' (2015) by Dzmitry Bahdanau
+		- Encoder
+			- Unidirectional RNN
+			- Stack Bidirectional RNN
+		- Attention
+			- Bahdanau Attention (option Norm)
+			- Luong Attention (option Scale)
+		- Decoder
+			- Greedy (beam_width = 0)
+			- Beam Search (beam_width > 0)
+
+2. **Dataset**
+
+	- [Cornell_Movie-Dialogs_Corpus](https://www.cs.cornell.edu/~cristian/Cornell_Movie-Dialogs_Corpus.html)
+	- [Twitter chat_corpus](https://github.com/Marsan-Ma/chat_corpus)
 
 ## Requirements
 
@@ -12,21 +28,17 @@ TensorFlow implementation of Conversation Models.
 - hb-config
 - tqdm
 
-## Features
+## Project Structure
 
-- Using Higher-APIs in TensorFlow
-	- [Estimator](https://www.tensorflow.org/api_docs/python/tf/estimator/Estimator)
-	- [Experiment](https://www.tensorflow.org/api_docs/python/tf/contrib/learn/Experiment)
-	- [Dataset](https://www.tensorflow.org/api_docs/python/tf/contrib/data/Dataset)
-- Encoder
-	- Unidirectional RNN
-	- Stack Bidirectional RNN
-- Attention
-	- BahdanauAttention (option Norm)
-	- LuongAttention (option Scale)
-- Decoder
-	- GreedyEmbeddingHelper
-	- BeamSearchDecoder
+    .
+    ├── config                  # Config files (.yml, .json) using with hb-config
+    ├── seq2seq_attention       # seq2seq_attention architecture graphs (from input to logits)
+    ├── data_loader.py          # raw_date -> precossed_data -> generate_batch (using Dataset)
+    ├── hook.py                 # training or test hook feature (eg. print_variables)
+    ├── main.py                 # define experiment_fn
+    └── model.py                # define EstimatorSpec      
+
+Reference : [hb-config](https://github.com/hb-research/hb-config), [Dataset](https://www.tensorflow.org/api_docs/python/tf/data/Dataset#from_generator), [experiments_fn](https://www.tensorflow.org/api_docs/python/tf/contrib/learn/Experiment), [EstimatorSpec](https://www.tensorflow.org/api_docs/python/tf/estimator/EstimatorSpec)
 
 
 ## Todo
@@ -48,6 +60,8 @@ Using Generative Hierarchical Neural Network Models](https://arxiv.org/pdf/1507.
 		- [How NOT To Evaluate Your Dialogue System: An Empirical Study of Unsupervised Evaluation Metrics for Dialogue Response Generation](https://arxiv.org/abs/1603.08023) by CW Liu, 2016
 
 ## Config
+
+Can control all **Experimental environment**.
 
 example: cornell-movie-dialogs.yml
 
@@ -112,6 +126,18 @@ Then, download [Cornell_Movie-Dialogs_Corpus](https://www.cs.cornell.edu/~cristi
 sh scripts/prepare_Cornell_Movie-Dialogs_Corpus
 python main.py --config cornell-movie-dialogs --mode train_and_evaluate
 ```
+
+### Experiments modes
+
+- `evaluate` : Evaluate on the evaluation data.
+- `extend_train_hooks` : Extends the hooks for training.
+- `reset_export_strategies` : Resets the export strategies with the new_export_strategies.
+- `run_std_server` : Starts a TensorFlow server and joins the serving thread.
+- `test` : Tests training, evaluating and exporting the estimator for a single step.
+- `train` : Fit the estimator using the training data.
+- `train_and_evaluate` : Interleaves training and evaluation.
+
+---
 
 After training, start chatting.
 
@@ -220,8 +246,6 @@ what ? <\s>
 it ' s a real competition
 ```
 
-Currently, my model is very stupid. Most of the words begin with ‘ I'm ... ’.
-
 
 ## Reference
 
@@ -229,3 +253,11 @@ Currently, my model is very stupid. Most of the words begin with ‘ I'm ... ’
 - [TensorFlow Neural Machine Translation Tutorial](https://github.com/tensorflow/nmt) - Tensorflow
 - [Deep Learning for Chatbots, Part 1 – Introduction](http://www.wildml.com/2016/04/deep-learning-for-chatbots-part-1-introduction/)
 - [Neural Text Generation: A Practical Guide](https://arxiv.org/abs/1711.09534) (2017) by Ziang Xie
+
+## Author
+
+Dongjun Lee (humanbrain.djlee@gmail.com)
+
+### Contributors
+
+- junbeomlee ([github](https://github.com/junbeomlee))
