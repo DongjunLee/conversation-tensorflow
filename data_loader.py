@@ -357,7 +357,10 @@ def make_batch(data, buffer_size=10000, batch_size=64, scope="train"):
                 dataset = tf.data.Dataset.from_tensor_slices(
                     (input_placeholder, output_placeholder))
 
-                dataset = dataset.repeat(None)  # Infinite iterations
+                if scope == "train":
+                    dataset = dataset.repeat(None)  # Infinite iterations
+                else:
+                    dataset = dataset.repeat(1)  # 1 Epoch
                 # dataset = dataset.shuffle(buffer_size=buffer_size)
                 dataset = dataset.batch(batch_size)
 

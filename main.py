@@ -7,7 +7,6 @@ from hbconfig import Config
 import tensorflow as tf
 
 import data_loader
-import dataset
 from model import Conversation
 import hook
 
