@@ -7,8 +7,9 @@ import random
 import re
 
 from nltk.tokenize import TweetTokenizer
-import numpy as np
 from hbconfig import Config
+import numpy as np
+import tensorflow as tf
 from tqdm import tqdm
 
 
@@ -252,20 +253,14 @@ def process_data():
     token2id('test', 'dec')
 
 
-def make_train_and_test_set(shuffle=True):
+def make_train_and_test_set(shuffle=True, bucket=True):
     print("make Training data and Test data Start....")
 
     train_X, train_y = load_data('train_ids.enc', 'train_ids.dec')
     test_X, test_y = load_data('test_ids.enc', 'test_ids.dec')
 
-    if len(train_X) == len(train_y) and len(test_X) == len(test_y):
-        pass
-    else:
-        train_count = min(len(train_X), len(train_y))
-        test_count = min(len(test_X), len(test_y))
-
-        train_X, train_y = train_X[:train_count], train_y[:train_count]
-        test_X, test_y = test_X[:test_count], test_y[:test_count]
+    assert len(train_X) == len(train_y)
+    assert len(test_X) == len(test_y)
 
     print(f"train data count : {len(train_X)}")
     print(f"test data count : {len(test_X)}")
@@ -275,9 +270,15 @@ def make_train_and_test_set(shuffle=True):
         train_p = np.random.permutation(len(train_y))
         test_p = np.random.permutation(len(test_y))
 
-        return train_X[train_p], test_X[test_p], train_y[train_p], test_y[test_p]
-    else:
-        return train_X, test_X, train_y, test_y
+        train_X, train_y = train_X[train_p], train_y[train_p]
+        test_X, test_y = test_X[test_p], test_y[test_p]
+
+    if bucket:
+        print("sorted by inputs length and outputs length ...")
+        train_X, train_y = zip(*sorted(zip(train_X, train_y), key=lambda x: len(x[0]) + len([x[1]])))
+        test_X, test_y = zip(*sorted(zip(test_X, test_y), key=lambda x: len(x[0]) + len([x[1]])))
+
+    return train_X, test_X, train_y, test_y
 
 def load_data(enc_fname, dec_fname):
     enc_input_data = open(os.path.join(Config.data.processed_path, enc_fname), 'r')
@@ -292,8 +293,10 @@ def load_data(enc_fname, dec_fname):
             continue
 
         if len(e_ids) <= Config.data.max_seq_length and len(d_ids) < Config.data.max_seq_length:
-            enc_data.append(_pad_input(e_ids, Config.data.max_seq_length))
-            dec_data.append(_pad_input(d_ids, Config.data.max_seq_length))
+
+            if abs(len(d_ids) - len(e_ids)) / (len(e_ids) + len(d_ids)) < Config.data.sentence_diff:
+                enc_data.append(_pad_input(e_ids, Config.data.max_seq_length))
+                dec_data.append(_pad_input(d_ids, Config.data.max_seq_length))
 
     print(f"load data from {enc_fname}, {dec_fname}...")
     return np.array(enc_data, dtype=np.int32), np.array(dec_data, dtype=np.int32)
@@ -321,45 +324,63 @@ def set_max_seq_length(dataset_fnames):
     print(f"Setting max_seq_length to Config : {max_seq_length}")
 
 
-def _reshape_batch(inputs, size, batch_size):
-    """ Create batch-major inputs. Batch inputs are just re-indexed inputs
-    """
-    batch_inputs = []
-    for length_id in range(size):
-        batch_inputs.append(np.array([inputs[batch_id][length_id]
-                                      for batch_id in range(batch_size)], dtype=np.int32))
-    return batch_inputs
+def make_batch(data, buffer_size=10000, batch_size=64, scope="train"):
+
+    class IteratorInitializerHook(tf.train.SessionRunHook):
+        """Hook to initialise data iterator after Session is created."""
+
+        def __init__(self):
+            super(IteratorInitializerHook, self).__init__()
+            self.iterator_initializer_func = None
+
+        def after_create_session(self, session, coord):
+            """Initialise the iterator after the session has been created."""
+            self.iterator_initializer_func(session)
 
 
-def get_batch(data_bucket, bucket_id, batch_size=1):
-    """ Return one batch to feed into the model """
-    # only pad to the max length of the bucket
-    encoder_size, decoder_size = Config.model.BUCKETS[bucket_id]
-    encoder_inputs, decoder_inputs = [], []
+    def get_inputs():
 
-    for _ in range(batch_size):
-        encoder_input, decoder_input = random.choice(data_bucket)
-        # pad both encoder and decoder, reverse the encoder
-        encoder_inputs.append(list(reversed(_pad_input(encoder_input, encoder_size))))
-        decoder_inputs.append(_pad_input(decoder_input, decoder_size))
+        iterator_initializer_hook = IteratorInitializerHook()
 
-    # now we create batch-major vectors from the data selected above.
-    batch_encoder_inputs = _reshape_batch(encoder_inputs, encoder_size, batch_size)
-    batch_decoder_inputs = _reshape_batch(decoder_inputs, decoder_size, batch_size)
+        def train_inputs():
+            with tf.name_scope(scope):
 
-    # create decoder_masks to be 0 for decoders that are padding.
-    batch_masks = []
-    for length_id in range(decoder_size):
-        batch_mask = np.ones(batch_size, dtype=np.float32)
-        for batch_id in range(batch_size):
-            # we set mask to 0 if the corresponding target is a PAD symbol.
-            # the corresponding decoder is decoder_input shifted by 1 forward.
-            if length_id < decoder_size - 1:
-                target = decoder_inputs[batch_id][length_id + 1]
-            if length_id == decoder_size - 1 or target == Config.data.PAD_ID:
-                batch_mask[batch_id] = 0.0
-        batch_masks.append(batch_mask)
-    return batch_encoder_inputs, batch_decoder_inputs, batch_masks
+                X, y = data
+
+                # Define placeholders
+                input_placeholder = tf.placeholder(
+                    tf.int32, [None, None])
+                output_placeholder = tf.placeholder(
+                    tf.int32, [None, None])
+
+                # Build dataset iterator
+                dataset = tf.data.Dataset.from_tensor_slices(
+                    (input_placeholder, output_placeholder))
+
+                dataset = dataset.repeat(None)  # Infinite iterations
+                # dataset = dataset.shuffle(buffer_size=buffer_size)
+                dataset = dataset.batch(batch_size)
+
+                iterator = dataset.make_initializable_iterator()
+                next_X, next_y = iterator.get_next()
+
+                tf.identity(next_X[0], 'enc_0')
+                tf.identity(next_y[0], 'dec_0')
+
+                # Set runhook to initialize iterator
+                iterator_initializer_hook.iterator_initializer_func = \
+                    lambda sess: sess.run(
+                        iterator.initializer,
+                        feed_dict={input_placeholder: X,
+                                   output_placeholder: y})
+
+                # Return batched (features, labels)
+                return next_X, next_y
+
+        # Return function and hook
+        return train_inputs, iterator_initializer_hook
+
+    return get_inputs()
 
 
 if __name__ == '__main__':
