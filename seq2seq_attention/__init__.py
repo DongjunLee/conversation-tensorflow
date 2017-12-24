@@ -89,6 +89,7 @@ class Graph:
                         encoder_type=Config.model.encoder_type,
                         num_layers=Config.model.num_layers,
                         num_units=Config.model.num_units,
+                        sampling_probability=Config.train.sampling_probability,
                         mode=self.mode,
                         dtype=self.dtype)
 

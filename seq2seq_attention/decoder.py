@@ -97,6 +97,7 @@ class Decoder:
                  encoder_type="uni",
                  num_layers=None,
                  num_units=None,
+                 sampling_probability=0.4,
                  mode=tf.estimator.ModeKeys.TRAIN,
                  dtype=tf.float32):
 
@@ -105,6 +106,8 @@ class Decoder:
         self.encoder_type = encoder_type
         self.num_layers = num_layers
         self.num_units = num_units
+        self.sampling_probability = sampling_probability
+
         if encoder_type == self.BI_ENCODER_TYPE:
             self.num_units *= 2
         self.mode = mode
@@ -171,9 +174,11 @@ class Decoder:
             assert inputs is not None
             assert sequence_length is not None
 
-            helper = tf.contrib.seq2seq.TrainingHelper(
+            helper = tf.contrib.seq2seq.ScheduledEmbeddingTrainingHelper(
                     inputs=inputs,
-                    sequence_length=sequence_length)
+                    sequence_length=sequence_length,
+                    embedding=embedding,
+                    sampling_probability=self.sampling_probability)
 
             return self._basic_decoder(helper)
 
