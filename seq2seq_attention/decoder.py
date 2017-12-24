@@ -156,7 +156,19 @@ class Decoder:
             end_token=None,
             length_penalty_weight=1.0):
 
-        if self.mode == tf.estimator.ModeKeys.PREDICT:
+        if self.mode == tf.estimator.ModeKeys.TRAIN:
+            assert inputs is not None
+            assert sequence_length is not None
+
+            helper = tf.contrib.seq2seq.ScheduledEmbeddingTrainingHelper(
+                    inputs=inputs,
+                    sequence_length=sequence_length,
+                    embedding=embedding,
+                    sampling_probability=self.sampling_probability)
+
+            return self._basic_decoder(helper)
+
+        else:
             assert embedding is not None
             assert start_tokens is not None
             assert end_token is not None
@@ -170,17 +182,6 @@ class Decoder:
                         start_tokens=start_tokens,
                         end_token=end_token)
                 return self._basic_decoder(helper)
-        else:
-            assert inputs is not None
-            assert sequence_length is not None
-
-            helper = tf.contrib.seq2seq.ScheduledEmbeddingTrainingHelper(
-                    inputs=inputs,
-                    sequence_length=sequence_length,
-                    embedding=embedding,
-                    sampling_probability=self.sampling_probability)
-
-            return self._basic_decoder(helper)
 
     def _basic_decoder(self, helper):
         decoder = tf.contrib.seq2seq.BasicDecoder(
