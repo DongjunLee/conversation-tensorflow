@@ -43,8 +43,6 @@ Reference : [hb-config](https://github.com/hb-research/hb-config), [Dataset](htt
 
 ## Todo
 
-- need to preprocessing data.
-- train with other dataset. ([Twitter chat_corpus](https://github.com/Marsan-Ma/chat_corpus))
 - make dataset Korean dialog corpus like [Cornell_Movie-Dialogs_Corpus](https://www.cs.cornell.edu/~cristian/Cornell_Movie-Dialogs_Corpus.html)
 - Implements CopyNet
 	- [Incorporating Copying Mechanism in Sequence-to-Sequence Learning](https://arxiv.org/abs/1603.06393) by J, Gu 2016.
@@ -73,6 +71,7 @@ data:
   processed_path: 'processed_cornell_movie_dialogs_data'
   word_threshold: 2
   max_seq_length: 200
+  sentence_diff: 0.33 (Filtering with input and output sentence diff)
   testset_size: 25000
 
   PAD_ID: 0
@@ -81,6 +80,7 @@ data:
   EOS_ID: 3
 
 model:
+  batch_size: 32
   num_layers: 4
   num_units: 512
   embed_dim: 256
@@ -92,17 +92,16 @@ model:
   attention_mechanism: normed_bahdanau (bahdanau, normed_bahdanau, luong, scaled_luong)
 
 train:
-  batch_size: 32
   learning_rate: 0.001
+  sampling_probability: 0.25 (Scheduled Sampling)
+  
   train_steps: 100000
   model_dir: 'logs/cornell_movie_dialogs'
-  save_every: 1000
+  
+  save_checkpoints_steps: 1000
   loss_hook_n_iter: 1000
   check_hook_n_iter: 1000
   min_eval_frequency: 1000
-
-eval:
-  batch_size: -1 (all test dataset)
 
 predict:
   beam_width: 5  (0: GreedyEmbeddingHelper, 1>=: BeamSearchDecoder)
@@ -129,13 +128,16 @@ python main.py --config cornell-movie-dialogs --mode train_and_evaluate
 
 ### Experiments modes
 
-- `evaluate` : Evaluate on the evaluation data.
-- `extend_train_hooks` : Extends the hooks for training.
-- `reset_export_strategies` : Resets the export strategies with the new_export_strategies.
-- `run_std_server` : Starts a TensorFlow server and joins the serving thread.
-- `test` : Tests training, evaluating and exporting the estimator for a single step.
-- `train` : Fit the estimator using the training data.
-- `train_and_evaluate` : Interleaves training and evaluation.
+:white_check_mark: : Working  
+:white_medium_small_square: : Not tested yet.
+
+- :white_check_mark: `evaluate` : Evaluate on the evaluation data.
+- :white_medium_small_square: `extend_train_hooks` : Extends the hooks for training.
+- :white_medium_small_square: `reset_export_strategies` : Resets the export strategies with the new_export_strategies.
+- :white_medium_small_square: `run_std_server` : Starts a TensorFlow server and joins the serving thread.
+- :white_medium_small_square: `test` : Tests training, evaluating and exporting the estimator for a single step.
+- :white_check_mark: `train` : Fit the estimator using the training data.
+- :white_check_mark: `train_and_evaluate` : Interleaves training and evaluation.
 
 ---
 
@@ -252,7 +254,7 @@ it ' s a real competition
 - [stanford-tensorflow-tutorials](https://github.com/chiphuyen/stanford-tensorflow-tutorials/tree/master/assignments/chatbot) by Chip Huyen
 - [TensorFlow Neural Machine Translation Tutorial](https://github.com/tensorflow/nmt) - Tensorflow
 - [Deep Learning for Chatbots, Part 1 – Introduction](http://www.wildml.com/2016/04/deep-learning-for-chatbots-part-1-introduction/)
-- [Neural Text Generation: A Practical Guide](https://arxiv.org/abs/1711.09534) (2017) by Ziang Xie
+- [Paper - Neural Text Generation: A Practical Guide](https://arxiv.org/abs/1711.09534) (2017) by Ziang Xie
 
 ## Author
 
