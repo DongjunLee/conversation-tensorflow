@@ -4,16 +4,17 @@ TensorFlow implementation of Conversation Models.
 
 1. **Model**
 
-	- `seq2seq_attention` : Seq2Seq model with attentional decoder based on '[Neural machine translation by jointly learning to align and translate](https://arxiv.org/pdf/1409.0473.pdf)' (2015) by Dzmitry Bahdanau
+	- `seq2seq_attention` : Seq2Seq model with attentional decoder
 		- Encoder
 			- Unidirectional RNN
 			- Stack Bidirectional RNN
 		- Attention
-			- Bahdanau Attention (option Norm)
-			- Luong Attention (option Scale)
+			- [Bahdanau Attention](https://arxiv.org/abs/1409.0473) (option Norm)
+			- [Luong Attention](https://arxiv.org/abs/1508.04025) (option Scale)
 		- Decoder
 			- Greedy (beam_width = 0)
 			- Beam Search (beam_width > 0)
+			- [Scheduled Sampling](https://arxiv.org/abs/1506.03099)
 
 2. **Dataset**
 
@@ -30,9 +31,14 @@ TensorFlow implementation of Conversation Models.
 
 ## Project Structure
 
+init Project by [hb-base](https://github.com/hb-research/hb-base)
+
     .
     ├── config                  # Config files (.yml, .json) using with hb-config
     ├── seq2seq_attention       # seq2seq_attention architecture graphs (from input to logits)
+        ├── __init__.py             # Graph
+        ├── encoder.py              # Encoder
+        ├── decoder.py              # Decoder
     ├── data_loader.py          # raw_date -> precossed_data -> generate_batch (using Dataset)
     ├── hook.py                 # training or test hook feature (eg. print_variables)
     ├── main.py                 # define experiment_fn
@@ -262,4 +268,4 @@ Dongjun Lee (humanbrain.djlee@gmail.com)
 
 ### Contributors
 
-- junbeomlee ([github](https://github.com/junbeomlee))
+- [junbeomlee](https://github.com/junbeomlee)
