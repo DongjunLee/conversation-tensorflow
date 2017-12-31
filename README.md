@@ -26,12 +26,12 @@ TensorFlow implementation of Conversation Models.
 - Python 3.6
 - TensorFlow 1.4
 - nltk
-- hb-config
+- [hb-config](https://github.com/hb-research/hb-config)
 - tqdm
 
 ## Project Structure
 
-init Project by [hb-base](https://github.com/hb-research/hb-base)
+initiate Project by [hb-base](https://github.com/hb-research/hb-base)
 
     .
     ├── config                  # Config files (.yml, .json) using with hb-config
@@ -52,16 +52,7 @@ Reference : [hb-config](https://github.com/hb-research/hb-config), [Dataset](htt
 - make dataset Korean dialog corpus like [Cornell_Movie-Dialogs_Corpus](https://www.cs.cornell.edu/~cristian/Cornell_Movie-Dialogs_Corpus.html)
 - Implements CopyNet
 	- [Incorporating Copying Mechanism in Sequence-to-Sequence Learning](https://arxiv.org/abs/1603.06393) by J, Gu 2016.
-- Common Challenge
-	- Incorporating Context
-		- [Building End-To-End Dialogue Systems
-Using Generative Hierarchical Neural Network Models](https://arxiv.org/pdf/1507.04808.pdf) by IV Serban, 2015.
-	- Coherent Personality Challenge
-		- [A Persona-Based Neural Conversation Model](https://arxiv.org/abs/1603.06155) by J Li, 2015.
-	- Intention and Diversity
-		- [A Diversity-Promoting Objective Function for Neural Conversation Models](https://arxiv.org/abs/1510.03055) by J Li, 2015.
-	- Evalutaion Metrics
-		- [How NOT To Evaluate Your Dialogue System: An Empirical Study of Unsupervised Evaluation Metrics for Dialogue Response Generation](https://arxiv.org/abs/1603.08023) by CW Liu, 2016
+- Apply [hb-research/notes - Neural Text Generation: A Practical Guide](https://github.com/hb-research/notes/blob/master/notes/neural_text_generation.md)
 
 ## Config
 
@@ -260,7 +251,7 @@ it ' s a real competition
 - [stanford-tensorflow-tutorials](https://github.com/chiphuyen/stanford-tensorflow-tutorials/tree/master/assignments/chatbot) by Chip Huyen
 - [TensorFlow Neural Machine Translation Tutorial](https://github.com/tensorflow/nmt) - Tensorflow
 - [Deep Learning for Chatbots, Part 1 – Introduction](http://www.wildml.com/2016/04/deep-learning-for-chatbots-part-1-introduction/)
-- [Paper - Neural Text Generation: A Practical Guide](https://arxiv.org/abs/1711.09534) (2017) by Ziang Xie
+- [hb-research/notes - Neural Text Generation: A Practical Guide](https://github.com/hb-research/notes/blob/master/notes/neural_text_generation.md)
 
 ## Author
 
