@@ -67,9 +67,9 @@ def twitter_question_answers():
             line = line.decode('utf-8')
 
             if line[-1] == '\n':
-                twitter_corpus.append(line[:-1])
+                twitter_corpus.append(line[:-1].lower())
             else:
-                twitter_corpus.append(line)
+                twitter_corpus.append(line.lower())
 
     questions = twitter_corpus[::2] # even is question
     answers = twitter_corpus[1::2] # odd is answer
@@ -96,11 +96,11 @@ def prepare_dataset(questions, answers):
         answer = answers[i]
 
         if i in test_ids:
-            files[2].write((question + "\n").encode('utf-8'))
-            files[3].write((answer + '\n').encode('utf-8'))
+            files[2].write((question + "\n").encode('utf-8').lower())
+            files[3].write((answer + '\n').encode('utf-8').lower())
         else:
-            files[0].write((question + '\n').encode('utf-8'))
-            files[1].write((answer + '\n').encode('utf-8'))
+            files[0].write((question + '\n').encode('utf-8').lower())
+            files[1].write((answer + '\n').encode('utf-8').lower())
 
     for file in files:
         file.close()

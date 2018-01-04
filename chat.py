@@ -95,7 +95,7 @@ def main():
     Config.data.vocab_size = len(vocab)
 
     while True:
-        sentence = _get_user_input()
+        sentence = _get_user_input().lower()
         ids = data_loader.sentence2id(vocab, sentence)
         ids += [Config.data.START_ID]
 

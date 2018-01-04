@@ -119,7 +119,7 @@ First, check if the model is valid.
 Then, download [Cornell_Movie-Dialogs_Corpus](https://www.cs.cornell.edu/~cristian/Cornell_Movie-Dialogs_Corpus.html) and train it.
 
 ```
-sh scripts/prepare_Cornell_Movie-Dialogs_Corpus
+sh scripts/prepare_Cornell_Movie-Dialogs_Corpus.sh
 python main.py --config cornell-movie-dialogs --mode train_and_evaluate
 ```
 
