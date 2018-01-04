@@ -44,34 +44,28 @@ class Attention:
 
     def _create_mechanism(self):
 
-        num_units = self.num_units
-        if self.encoder_type == "bi":
-            num_units *= 2
-        if "luong" in self.attention_mechanism:
-            num_units *= 2
-
         if self.attention_mechanism == "bahdanau":
             return tf.contrib.seq2seq.BahdanauAttention(
-                    num_units,
+                    self.num_units,
                     self.memory,
                     memory_sequence_length=self.memory_sequence_length)
 
         elif self.attention_mechanism == "normed_bahdanau":
             return tf.contrib.seq2seq.BahdanauAttention(
-                    num_units,
+                    self.num_units,
                     self.memory,
                     memory_sequence_length=self.memory_sequence_length,
                     normalize=True)
 
         elif self.attention_mechanism == "luong":
             return tf.contrib.seq2seq.LuongAttention(
-                    num_units,
+                    self.num_units,
                     self.memory,
                     memory_sequence_length=self.memory_sequence_length)
 
         elif self.attention_mechanism == "scaled_luong":
             return tf.contrib.seq2seq.LuongAttention(
-                    num_units,
+                    self.num_units,
                     self.memory,
                     memory_sequence_length=self.memory_sequence_length,
                     scale=True)
