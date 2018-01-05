@@ -187,6 +187,7 @@ class Decoder:
             outputs = tf.contrib.seq2seq.dynamic_decode(
                 decoder=decoder,
                 output_time_major=False,
+                impute_finished=True,
                 swap_memory=True)
         else:
             outputs = tf.contrib.seq2seq.dynamic_decode(
@@ -210,7 +211,7 @@ class Decoder:
         outputs = tf.contrib.seq2seq.dynamic_decode(
             decoder=decoder,
             output_time_major=False,
-            impute_finished=False,
+            impute_finished=True,
             maximum_iterations=self.maximum_iterations)
         return outputs[0]
 

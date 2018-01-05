@@ -122,14 +122,28 @@ class Graph:
                     self.predictions = decoder_outputs.sample_id
 
             if self.mode == tf.estimator.ModeKeys.PREDICT:
+                # PREDICT mode do not need loss
                 return
 
-            pad_num = Config.data.max_seq_length - tf.shape(self.decoder_logits)[1]
-            zero_padding = tf.zeros(
-                    [batch_size, pad_num, Config.data.vocab_size],
-                    dtype=self.dtype)
+            decoder_output_length = tf.shape(self.decoder_logits)[1]
 
-            self.logits = tf.concat([self.decoder_logits, zero_padding], axis=1)
+            def concat_zero_padding():
+                pad_num = Config.data.max_seq_length - decoder_output_length
+                zero_padding = tf.zeros(
+                        [batch_size, pad_num, Config.data.vocab_size],
+                        dtype=self.dtype)
+
+                return tf.concat([self.decoder_logits, zero_padding], axis=1)
+
+            def slice_to_max_len():
+                return tf.slice(self.decoder_logits,
+                                [0, 0, 0],
+                                [batch_size, Config.data.max_seq_length, Config.data.vocab_size])
+
+            # decoder output sometimes exceed max_seq_length
+            self.logits = tf.cond(decoder_output_length < Config.data.max_seq_length,
+                                  concat_zero_padding,
+                                  slice_to_max_len)
             self.predictions = tf.argmax(self.logits, axis=2)
 
             self.weight_masks = tf.sequence_mask(
