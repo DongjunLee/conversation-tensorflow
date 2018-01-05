@@ -349,9 +349,9 @@ def make_batch(data, buffer_size=10000, batch_size=64, scope="train"):
 
                 # Define placeholders
                 input_placeholder = tf.placeholder(
-                    tf.int32, [None, None])
+                    tf.int32, [None, Config.data.max_seq_length])
                 output_placeholder = tf.placeholder(
-                    tf.int32, [None, None])
+                    tf.int32, [None, Config.data.max_seq_length])
 
                 # Build dataset iterator
                 dataset = tf.data.Dataset.from_tensor_slices(

@@ -41,7 +41,8 @@ def experiment_fn(run_config, params):
                 variables=['train/enc_0', 'train/dec_0', 'train/pred_0'],
                 vocab=vocab,
                 every_n_iter=Config.train.check_hook_n_iter)],
-        eval_hooks=[test_input_hook]
+        eval_hooks=[test_input_hook],
+        eval_delay_secs=0
     )
     return experiment
 
