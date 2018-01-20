@@ -10,7 +10,7 @@ import tensorflow as tf
 
 import data_loader
 from model import Conversation
-import hook
+import utils
 
 
 def chat(ids, vocab):
@@ -57,7 +57,7 @@ def chat(ids, vocab):
 
         prediction = select_by_score(prediction)
 
-    rev_vocab = hook.get_rev_vocab(vocab)
+    rev_vocab = utils.get_rev_vocab(vocab)
     def to_str(sequence):
         tokens = [
             rev_vocab.get(x, '') for x in sequence if x != Config.data.PAD_ID]

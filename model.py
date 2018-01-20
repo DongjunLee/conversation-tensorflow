@@ -18,29 +18,20 @@ class Conversation:
         self.dtype = tf.float32
         self.mode = mode
 
+        self.loss, self.train_op, self.metrics, self.predictions = None, None, None, None
         self._init_placeholder(features, labels)
         self.build_graph()
 
-        if self.mode == tf.estimator.ModeKeys.TRAIN:
-            return tf.estimator.EstimatorSpec(
-                mode=mode,
-                predictions=self.train_predictions,
-                loss=self.loss,
-                train_op=self.train_op
-            )
+        # train mode: required loss and train_op
+        # eval mode: required loss
+        # predict mode: required predictions
 
-        elif self.mode == tf.estimator.ModeKeys.EVAL:
-            return tf.estimator.EstimatorSpec(
-                mode=mode,
-                predictions=self.predictions,
-                loss=self.loss,
-                eval_metric_ops=self._build_metric()
-            )
-
-        elif self.mode == tf.estimator.ModeKeys.PREDICT:
-            return tf.estimator.EstimatorSpec(
-                mode=mode,
-                predictions={"prediction": self.predictions})
+        return tf.estimator.EstimatorSpec(
+            mode=mode,
+            loss=self.loss,
+            train_op=self.train_op,
+            eval_metric_ops=self.metrics,
+            predictions={"prediction": self.predictions})
 
     def _init_placeholder(self, features, labels):
         self.encoder_inputs = features
@@ -65,18 +56,11 @@ class Conversation:
         graph.build(encoder_inputs=self.encoder_inputs,
                     decoder_inputs=self.decoder_inputs)
 
-        if self.mode == tf.estimator.ModeKeys.TRAIN:
+        self.predictions = graph.predictions
+        if self.mode != tf.estimator.ModeKeys.PREDICT:
             self._build_loss(graph.logits, graph.weight_masks)
             self._build_optimizer()
-            self.train_predictions = graph.train_predictions
-
-        elif self.mode == tf.estimator.ModeKeys.EVAL:
-            self._build_loss(graph.logits, graph.weight_masks)
-
-            self.predictions = graph.predictions
-
-        elif self.mode == tf.estimator.ModeKeys.PREDICT:
-            self.predictions = graph.predictions
+            self._build_metric()
 
     def _build_loss(self, logits, weight_masks):
         self.loss = tf.contrib.seq2seq.sequence_loss(
@@ -120,7 +104,7 @@ class Conversation:
             score = tf.py_func(_nltk_blue_score, (labels, predictions), tf.float64)
             return tf.metrics.mean(score * 100)
 
-        return {
+        self.metrics = {
             "accuracy": tf.metrics.accuracy(self.targets, self.predictions),
             "bleu": blue_score(self.targets, self.predictions)
         }
