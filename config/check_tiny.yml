@@ -1,5 +1,5 @@
 data:
-  base_path: 'data/cornell_movie-dialogs_corpus/'
+  base_path: 'data/'
   conversation_fname: 'movie_conversations.txt'
   line_fname: 'movie_lines.txt'
   processed_path: 'tiny_processed_data'
@@ -35,6 +35,12 @@ train:
   check_hook_n_iter: 10
   min_eval_frequency: 10
 
+  print_verbose: True
+  debug: False
+
 predict:
   beam_width: 0
   length_penalty_weight: 1.0
+
+slack:
+  webhook_url: ""

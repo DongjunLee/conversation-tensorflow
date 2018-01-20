@@ -35,6 +35,12 @@ train:
   check_hook_n_iter: 1000
   min_eval_frequency: 1000
 
+  print_verbose: True
+  debug: False
+
 predict:
   beam_width: 0
   length_penalty_weight: 1.0
+
+slack:
+  webhook_url: ""
