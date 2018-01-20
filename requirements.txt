@@ -1,3 +1,4 @@
 hb-config
 nltk
 tqdm
+requests

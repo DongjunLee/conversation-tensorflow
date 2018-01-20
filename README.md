@@ -26,8 +26,9 @@ TensorFlow implementation of Conversation Models.
 - Python 3.6
 - TensorFlow 1.4
 - nltk
-- [hb-config](https://github.com/hb-research/hb-config)
+- [hb-config](https://github.com/hb-research/hb-config) (Singleton Config)
 - tqdm
+- [Slack Incoming Webhook URL](https://my.slack.com/services/new/incoming-webhook/)
 
 ## Project Structure
 
@@ -35,6 +36,8 @@ initiate Project by [hb-base](https://github.com/hb-research/hb-base)
 
     .
     ├── config                  # Config files (.yml, .json) using with hb-config
+    ├── data/                   # dataset path
+    ├── scripts                 # download dataset using shell scripts
     ├── seq2seq_attention       # seq2seq_attention architecture graphs (from input to logits)
         ├── __init__.py             # Graph
         ├── encoder.py              # Encoder
@@ -68,7 +71,7 @@ data:
   processed_path: 'processed_cornell_movie_dialogs_data'
   word_threshold: 2
   max_seq_length: 200
-  sentence_diff: 0.33 (Filtering with input and output sentence diff)
+  sentence_diff: 0.33   # (Filtering with input and output sentence diff)
   testset_size: 25000
 
   PAD_ID: 0
@@ -81,16 +84,15 @@ model:
   num_layers: 4
   num_units: 512
   embed_dim: 256
-  embed_share: true (true or false)
-  cell_type: gru  (lstm, gru, layer_norm_lstm, nas)
-  beam_width: 0  (0: GreedyEmbeddingHelper)
+  embed_share: true   # (true or false)
+  cell_type: gru      # (lstm, gru, layer_norm_lstm, nas)
   dropout: 0.2
-  encoder_type: bi  (uni / bi)
-  attention_mechanism: normed_bahdanau (bahdanau, normed_bahdanau, luong, scaled_luong)
+  encoder_type: bi    # (uni / bi)
+  attention_mechanism: normed_bahdanau  # (bahdanau, normed_bahdanau, luong, scaled_luong)
 
 train:
   learning_rate: 0.001
-  sampling_probability: 0.25 (Scheduled Sampling)
+  sampling_probability: 0.25  # (Scheduled Sampling)
   
   train_steps: 100000
   model_dir: 'logs/cornell_movie_dialogs'
@@ -99,10 +101,16 @@ train:
   loss_hook_n_iter: 1000
   check_hook_n_iter: 1000
   min_eval_frequency: 1000
+  
+  print_verbose: True
+  debug: False
 
 predict:
-  beam_width: 5  (0: GreedyEmbeddingHelper, 1>=: BeamSearchDecoder)
+  beam_width: 5    # (0: GreedyEmbeddingHelper, 1>=: BeamSearchDecoder)
   length_penalty_weight: 1.0
+  
+slack:
+  webhook_url: ""  # after training notify you using slack-webhook
 ```
 
 
@@ -249,13 +257,13 @@ it ' s a real competition
 ## Reference
 
 - [stanford-tensorflow-tutorials](https://github.com/chiphuyen/stanford-tensorflow-tutorials/tree/master/assignments/chatbot) by Chip Huyen
-- [TensorFlow Neural Machine Translation Tutorial](https://github.com/tensorflow/nmt) - Tensorflow
-- [Deep Learning for Chatbots, Part 1 – Introduction](http://www.wildml.com/2016/04/deep-learning-for-chatbots-part-1-introduction/)
+- [TensorFlow Neural Machine Translation Tutorial](https://github.com/tensorflow/nmt) - Tensorflow Official
+- [Deep Learning for Chatbots, Part 1 – Introduction](http://www.wildml.com/2016/04/deep-learning-for-chatbots-part-1-introduction/) - WildML
 - [hb-research/notes - Neural Text Generation: A Practical Guide](https://github.com/hb-research/notes/blob/master/notes/neural_text_generation.md)
 
 ## Author
 
-Dongjun Lee (humanbrain.djlee@gmail.com)
+[Dongjun Lee](https://github.com/DongjunLee) (humanbrain.djlee@gmail.com)
 
 ### Contributors
 
