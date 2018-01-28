@@ -1,4 +1,4 @@
-# A Neural Conversational Model
+# A Neural Conversational Model [![hb-research](https://img.shields.io/badge/hb--research-experiment-green.svg?style=flat&colorA=448C57&colorB=555555)](https://github.com/hb-research)
 
 TensorFlow implementation of Conversation Models.
 
