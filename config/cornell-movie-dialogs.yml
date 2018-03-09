@@ -35,7 +35,7 @@ train:
   save_checkpoints_steps: 1000
   loss_hook_n_iter: 1000
   check_hook_n_iter: 1000
-  min_eval_frequency: 1000
+  min_eval_frequency: 1
 
   print_verbose: True
   debug: False

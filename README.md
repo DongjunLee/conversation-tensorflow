@@ -128,6 +128,7 @@ Then, download [Cornell_Movie-Dialogs_Corpus](https://www.cs.cornell.edu/~cristi
 
 ```
 sh scripts/prepare_Cornell_Movie-Dialogs_Corpus.sh
+python data_loader --config cornell-movie-dialogs  # pre-processing data
 python main.py --config cornell-movie-dialogs --mode train_and_evaluate
 ```
 

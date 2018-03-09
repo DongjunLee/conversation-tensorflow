@@ -53,6 +53,7 @@ def experiment_fn(run_config, params):
         min_eval_frequency=Config.train.min_eval_frequency,
         train_monitors=train_hooks,
         eval_hooks=eval_hooks,
+        eval_delay_secs=0
     )
     return experiment
 
