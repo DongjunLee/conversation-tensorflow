@@ -167,7 +167,7 @@ class Decoder:
             assert start_tokens is not None
             assert end_token is not None
 
-            if self.beam_width > 0:
+            if self.mode == tf.estimator.ModeKeys.PREDICT and self.beam_width > 0:
                 return self._beam_search_decoder(
                         embedding, start_tokens, end_token, length_penalty_weight)
             else:

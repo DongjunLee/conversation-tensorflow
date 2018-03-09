@@ -73,7 +73,7 @@ class Graph:
                     input_vector=self.encoder_emb_inp,
                     sequence_length=self.encoder_input_lengths)
 
-            if self.mode != tf.estimator.ModeKeys.TRAIN and self.beam_width > 0:
+            if self.mode == tf.estimator.ModeKeys.PREDICT and self.beam_width > 0:
                 self.encoder_outputs = tf.contrib.seq2seq.tile_batch(
                         self.encoder_outputs, self.beam_width)
                 self.encoder_input_lengths = tf.contrib.seq2seq.tile_batch(
@@ -114,7 +114,7 @@ class Graph:
             if self.mode == tf.estimator.ModeKeys.TRAIN:
                 self.decoder_logits = decoder_outputs.rnn_output
             else:
-                if self.beam_width > 0:
+                if self.mode == tf.estimator.ModeKeys.PREDICT and self.beam_width > 0:
                     self.decoder_logits = tf.no_op()
                     self.predictions = decoder_outputs.predicted_ids
                 else:
