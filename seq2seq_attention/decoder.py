@@ -181,7 +181,7 @@ class Decoder:
         decoder = tf.contrib.seq2seq.BasicDecoder(
             cell=self.out_cell,
             helper=helper,
-            initial_state=(self.decoder_initial_state))
+            initial_state=self.decoder_initial_state)
 
         if self.mode == tf.estimator.ModeKeys.TRAIN:
             outputs = tf.contrib.seq2seq.dynamic_decode(
@@ -190,13 +190,13 @@ class Decoder:
                 impute_finished=True,
                 swap_memory=True)
         else:
-            outputs = tf.contrib.seq2seq.dynamic_decode(
+            outputs, final_context_state, _ = tf.contrib.seq2seq.dynamic_decode(
                 decoder=decoder,
                 output_time_major=False,
                 impute_finished=True,
                 maximum_iterations=self.maximum_iterations)
 
-        return outputs[0]
+        return outputs
 
     def _beam_search_decoder(self, embedding, start_tokens, end_token, length_penalty_weight):
         decoder = tf.contrib.seq2seq.BeamSearchDecoder(
@@ -204,16 +204,16 @@ class Decoder:
             embedding=embedding,
             start_tokens=start_tokens,
             end_token=end_token,
-            initial_state=(self.decoder_initial_state),
+            initial_state=self.decoder_initial_state,
             beam_width=self.beam_width,
             length_penalty_weight=length_penalty_weight)
 
-        outputs = tf.contrib.seq2seq.dynamic_decode(
+        outputs, final_context_state, _ = tf.contrib.seq2seq.dynamic_decode(
             decoder=decoder,
             output_time_major=False,
-            impute_finished=True,
+            impute_finished=False,
             maximum_iterations=self.maximum_iterations)
-        return outputs[0]
+        return outputs
 
     def _create_rnn_cells(self, is_list=False):
         """Contructs stacked_rnn with num_layers
