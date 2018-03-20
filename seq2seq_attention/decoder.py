@@ -184,7 +184,7 @@ class Decoder:
             initial_state=self.decoder_initial_state)
 
         if self.mode == tf.estimator.ModeKeys.TRAIN:
-            outputs = tf.contrib.seq2seq.dynamic_decode(
+            outputs, final_context_state, _ = tf.contrib.seq2seq.dynamic_decode(
                 decoder=decoder,
                 output_time_major=False,
                 impute_finished=True,
