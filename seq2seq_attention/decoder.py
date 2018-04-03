@@ -104,6 +104,9 @@ class Decoder:
 
         if encoder_type == self.BI_ENCODER_TYPE:
             self.num_units *= 2
+            self.num_layers = int(self.num_layers / 2)
+            if self.num_layers == 0:
+                self.num_layers = 1
         self.mode = mode
         self.dtype = dtype
 
@@ -137,10 +140,10 @@ class Decoder:
         if self.mode == tf.estimator.ModeKeys.PREDICT and self.beam_width > 0:
             decoder_start_state = tf.contrib.seq2seq.tile_batch(encoder_final_state, self.beam_width)
             self.decoder_initial_state = self.out_cell.zero_state(batch_size * self.beam_width, self.dtype)
-            self.decoder_initial_state.clone(cell_state=decoder_start_state)
+            self.decoder_initial_state = self.decoder_initial_state.clone(cell_state=decoder_start_state)
         else:
             self.decoder_initial_state = self.out_cell.zero_state(batch_size, self.dtype)
-            self.decoder_initial_state.clone(cell_state=encoder_final_state)
+            self.decoder_initial_state = self.decoder_initial_state.clone(cell_state=encoder_final_state)
 
     def build(self,
             inputs=None,
