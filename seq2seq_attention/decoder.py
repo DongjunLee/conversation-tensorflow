@@ -218,7 +218,7 @@ class Decoder:
             maximum_iterations=self.maximum_iterations)
         return outputs
 
-    def _create_rnn_cells(self, is_list=False):
+    def _create_rnn_cells(self):
         """Contructs stacked_rnn with num_layers
         * Args:
             is_list: flags for stack bidirectional. True=stack bidirectional, False=unidirectional
@@ -231,8 +231,8 @@ class Decoder:
             single_cell = self._rnn_single_cell()
             stacked_rnn.append(single_cell)
 
-        if is_list:
-            return stacked_rnn
+        if self.num_layers == 1:
+            return stacked_rnn[0]
         else:
             return tf.nn.rnn_cell.MultiRNNCell(
                     cells=stacked_rnn,

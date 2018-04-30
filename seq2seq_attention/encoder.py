@@ -88,6 +88,7 @@ class Encoder:
             encoder_final_state = tf.contrib.rnn.LSTMStateTuple(c=encoder_final_state_c, h=encoder_final_state_h)
         else:
             encoder_final_state = tf.concat((output_state_fw[-1], output_state_bw[-1]), axis=1)
+
         return outputs, encoder_final_state
 
     def _create_rnn_cells(self, is_list=False):
